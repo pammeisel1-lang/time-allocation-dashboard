@@ -91,6 +91,10 @@
             Choose files
             <input type="file" accept="application/json,.json" multiple onChange="{{ onFiles }}" style="display:none;">
           </label>
+          <button onClick="{{ syncFromCloud }}" style="display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:11px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-size:14.5px;font-weight:600;cursor:pointer;">
+            {{ cloudSyncLabel }}
+          </button>
+          <sc-if value="{{ cloudMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudMsg }}</span></sc-if>
         </div>
       </div>
       </sc-if>
@@ -115,6 +119,8 @@
           Add / update
           <input type="file" accept="application/json,.json" multiple onChange="{{ onFiles }}" style="display:none;">
         </label>
+        <button onClick="{{ syncFromCloud }}" class="no-print" style="height:38px;padding:0 15px;border-radius:9px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-size:13.5px;font-weight:600;cursor:pointer;">{{ cloudSyncLabel }}</button>
+        <sc-if value="{{ cloudMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudMsg }}</span></sc-if>
         <button onClick="{{ clearAll }}" class="no-print" style="height:38px;padding:0 14px;border-radius:9px;border:1px solid #f6d6dd;background:#fff;color:#f05376;font-size:13px;font-weight:600;cursor:pointer;">Clear all</button>
       </div>
 
@@ -208,6 +214,8 @@ class Component extends DCLogic {
     this.HPD = 8;
     this.FY_START_MONTH = 6;
     this.LSKEY = 'fp-team-rollup-v1';
+    this.SUPABASE_URL = 'https://jesjtdkehyzteoqhycyq.supabase.co';
+    this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Implc2p0ZGtlaHl6dGVvcWh5Y3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDAyMTcsImV4cCI6MjA5OTU3NjIxN30.SE_bWxKBHaQujC-7IuthAkVu1HeVw5sHX1SLkgnNxBk';
     this.PALETTE = ['#003a4a','#49bd99','#1c8baf','#f05376','#ffce6d','#5b4fc4','#1b9e77','#d95f02'];
     this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3'};
     this.BH = new Set([
@@ -225,6 +233,91 @@ class Component extends DCLogic {
   }
 
   persist(people){ try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:1, people})); }catch(e){} }
+
+  cloudHeaders(){
+    return {'apikey':this.SUPABASE_ANON_KEY, 'Authorization':'Bearer '+this.SUPABASE_ANON_KEY, 'Content-Type':'application/json'};
+  }
+
+  weekKeyFor(dateStr){
+    const d=new Date(dateStr+'T00:00:00');
+    const dow=d.getDay();
+    const diff=(dow===0?-6:1-dow);
+    const mon=new Date(d); mon.setDate(d.getDate()+diff);
+    return mon.toISOString().slice(0,10);
+  }
+
+  computeCalFor(m){
+    const dim=new Date(m.year,m.month,0).getDate();
+    let workingDays=0;
+    for(let d=1;d<=dim;d++){
+      const dow=new Date(m.year,m.month-1,d).getDay();
+      const iso=`${m.year}-${String(m.month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(dow>=1 && dow<=5 && !this.BH.has(iso)) workingDays++;
+    }
+    return {workingDays};
+  }
+
+  computeOvertimeFor(m, SD, HPD){
+    const weeks={};
+    const dim=new Date(m.year,m.month,0).getDate();
+    for(let d=1;d<=dim;d++){
+      const dow=new Date(m.year,m.month-1,d).getDay();
+      const iso=`${m.year}-${String(m.month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(dow>=1 && dow<=5 && !this.BH.has(iso)){
+        const wk=this.weekKeyFor(iso);
+        if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0};
+        weeks[wk].workDays++;
+      }
+    }
+    let workedTotal=0, leaveTotal=0;
+    (m.entries||[]).forEach(e=>{
+      const wk=this.weekKeyFor(e.date);
+      if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0};
+      if(e.category==='Annual leave'){ weeks[wk].leave+=e.hours; leaveTotal+=e.hours; return; }
+      weeks[wk].worked+=e.hours;
+      workedTotal+=e.hours;
+    });
+    let weeklyOT=0;
+    Object.values(weeks).forEach(w=>{
+      const leaveDaysWk=w.leave/HPD;
+      const cap=Math.max((w.workDays-leaveDaysWk)*SD, 0);
+      weeklyOT+=Math.max(w.worked-cap, 0);
+    });
+    const cal=this.computeCalFor(m);
+    const leaveDaysTotal=leaveTotal/HPD;
+    const monthlyCap=Math.max((cal.workingDays-leaveDaysTotal)*SD, 0);
+    const monthlyOT=Math.max(workedTotal-monthlyCap, 0);
+    return {weeklyOT, monthlyOT};
+  }
+
+  nameFromSlug(slug){ return (slug||'unknown').split('-').filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')||'Unnamed'; }
+
+  syncFromCloud(){
+    this.setState({cloudSyncing:true, cloudMsg:null});
+    const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state?select=person_slug,dashboard_type,data,updated_at`;
+    fetch(url,{headers:{...this.cloudHeaders(),'Accept':'application/json'}})
+      .then(r=>r.ok?r.json():[])
+      .then(rows=>{
+        if(!rows || !rows.length){ this.setState({cloudSyncing:false, cloudMsg:'No cloud data found yet — team members need to log at least one entry.'}); return; }
+        const people=this.state.people.slice();
+        rows.forEach(row=>{
+          const SD = row.dashboard_type==='6h' ? 6 : 9;
+          const HPD = row.dashboard_type==='6h' ? 6 : 8;
+          const months=(row.data && row.data.months) || [];
+          const overtimeByMonth={};
+          months.forEach(m=>{ overtimeByMonth[m.key]=this.computeOvertimeFor(m, SD, HPD); });
+          const name=this.nameFromSlug(row.person_slug);
+          const rec={name, months, work:(row.data&&row.data.work)||[], overtimeByMonth, standardDayHours:SD, importedAt:'synced '+new Date(row.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})};
+          const idx=people.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+          if(idx>=0){ rec.id=people[idx].id; rec.color=people[idx].color; people[idx]=rec; }
+          else { rec.id=this.pid++; rec.color=this.PALETTE[(people.length)%this.PALETTE.length]; people.push(rec); }
+        });
+        this.persist(people);
+        this.setState({people, cloudSyncing:false, cloudMsg:`Synced ${rows.length} – team member(s) from cloud \u2713`});
+        setTimeout(()=>{ if(this.state.cloudMsg) this.setState({cloudMsg:null}); },4000);
+      })
+      .catch(()=>{ this.setState({cloudSyncing:false, cloudMsg:'Could not reach cloud — check your connection.'}); });
+  }
 
   fyStartFor(y,m){ return m>=this.FY_START_MONTH ? y : y-1; }
   fyKeys(){ const start=this.fyStartFor(this.today.y,this.today.m); const ks=[]; for(let i=0;i<12;i++){ const idx=this.FY_START_MONTH-1+i; const y=start+Math.floor(idx/12); const m=(idx%12)+1; ks.push(`${y}-${String(m).padStart(2,'0')}`); } return ks; }
@@ -444,6 +537,9 @@ class Component extends DCLogic {
       tiles, personRows, personTotals,
       clientRows, clientTotals, hasClients:clientRows.length>0, noClients:clientRows.length===0,
       onFiles:(e)=>{ this.ingest(e.target.files); e.target.value=''; },
+      syncFromCloud:()=>this.syncFromCloud(),
+      cloudSyncLabel:this.state.cloudSyncing?'Syncing\u2026':'Sync from cloud',
+      cloudMsg:this.state.cloudMsg||null,
       onDrop:(e)=>{ e.preventDefault(); this.setState({dragActive:false}); if(e.dataTransfer&&e.dataTransfer.files) this.ingest(e.dataTransfer.files); },
       onDragOver:(e)=>{ e.preventDefault(); if(!this.state.dragActive) this.setState({dragActive:true}); },
       onDragLeave:(e)=>{ e.preventDefault(); this.setState({dragActive:false}); },
