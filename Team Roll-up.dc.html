@@ -179,6 +179,52 @@
         </div>
       </div>
 
+      <sc-if value="{{ hasDivData }}" hint-placeholder-val="">
+      <div class="pbk" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split — time</div>
+          <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Client Work hours, whole team</div>
+          <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
+            <div style="position:relative;width:150px;height:150px;">
+              <div style="position:absolute;inset:0;border-radius:50%;background:{{ divTimeBg }};"></div>
+              <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ divTimeLegend }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="width:9px;height:9px;border-radius:2px;background:{{ d.color }};flex:none;"></span>
+                <span style="font-size:13.5px;flex:1;">{{ d.name }}</span>
+                <span style="font-size:12px;color:#8aa0a6;">{{ d.pct }}%</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;">{{ d.valStr }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split — revenue</div>
+          <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Billable revenue, whole team</div>
+          <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
+            <div style="position:relative;width:150px;height:150px;">
+              <div style="position:absolute;inset:0;border-radius:50%;background:{{ divRevBg }};"></div>
+              <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ divRevLegend }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="width:9px;height:9px;border-radius:2px;background:{{ d.color }};flex:none;"></span>
+                <span style="font-size:13.5px;flex:1;">{{ d.name }}</span>
+                <span style="font-size:12px;color:#8aa0a6;">{{ d.pct }}%</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;">{{ d.valStr }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
       <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
         <div style="font-size:16px;font-weight:600;margin-bottom:16px;">By client &amp; work — whole team</div>
         <sc-if value="{{ hasClients }}" hint-placeholder-val="{{ true }}">
@@ -221,6 +267,8 @@ class Component extends DCLogic {
     this.HPD = 8;
     this.FY_START_MONTH = 6;
     this.LSKEY = 'fp-team-rollup-v1';
+    this.DIVISIONS = ['Transport','Health & Safety','HR'];
+    this.DIVCOLOR = {'Transport':'#1c8baf','Health & Safety':'#e8974d','HR':'#8b6fc9'};
     this.SUPABASE_URL = 'https://jesjtdkehyzteoqhycyq.supabase.co';
     this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Implc2p0ZGtlaHl6dGVvcWh5Y3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDAyMTcsImV4cCI6MjA5OTU3NjIxN30.SE_bWxKBHaQujC-7IuthAkVu1HeVw5sHX1SLkgnNxBk';
     this.PALETTE = ['#003a4a','#49bd99','#1c8baf','#f05376','#ffce6d','#5b4fc4','#1b9e77','#d95f02'];
@@ -423,7 +471,8 @@ class Component extends DCLogic {
   }
 
   aggPerson(person, keys){
-    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={};
+    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={};
+    this.DIVISIONS.forEach(dv=>{ byDivision[dv]={hours:0,rev:0}; });
     const otm=person.overtimeByMonth||{};
     keys.forEach(k=>{ if(otm[k]) ot+=otm[k].monthlyOT||0; });
     (person.months||[]).forEach(m=>{
@@ -434,10 +483,12 @@ class Component extends DCLogic {
         const cn=this.canonicalClient(e.client);
         if(!byClient[cn]) byClient[cn]={hours:0,rev:0,category:e.category};
         byClient[cn].hours+=e.hours;
-        if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const bh=(e.billHours!=null?e.billHours:e.hours); const r=(e.revenueOverride!=null?e.revenueOverride:bh*eff); bill+=bh; rev+=r; byClient[cn].rev+=r; }
+        let r=0;
+        if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const bh=(e.billHours!=null?e.billHours:e.hours); r=(e.revenueOverride!=null?e.revenueOverride:bh*eff); bill+=bh; rev+=r; byClient[cn].rev+=r; }
+        if(e.category==='Client Work' && e.division && byDivision[e.division]){ byDivision[e.division].hours+=e.hours; byDivision[e.division].rev+=r; }
       });
     });
-    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient};
+    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision};
   }
 
   deriveName(fileName){
@@ -497,6 +548,7 @@ class Component extends DCLogic {
 
     let T={total:0,bill:0,rev:0,leave:0,nonbill:0,capH:0};
     const teamClients={};
+    const teamDivisions={}; this.DIVISIONS.forEach(dv=>{ teamDivisions[dv]={hours:0,rev:0}; });
     const personRows=people.map(p=>{
       const a=this.aggPerson(p, keys);
       const leaveDays=a.leave/this.HPD;
@@ -505,6 +557,7 @@ class Component extends DCLogic {
       const capH=effWD*sd;
       T.total+=a.total; T.bill+=a.bill; T.rev+=a.rev; T.leave+=a.leave; T.nonbill+=a.nonbill; T.capH+=capH; T.ot=(T.ot||0)+a.ot;
       Object.keys(a.byClient).forEach(cn=>{ if(!teamClients[cn]) teamClients[cn]={hours:0,rev:0,category:a.byClient[cn].category}; teamClients[cn].hours+=a.byClient[cn].hours; teamClients[cn].rev+=a.byClient[cn].rev; });
+      this.DIVISIONS.forEach(dv=>{ if(a.byDivision && a.byDivision[dv]){ teamDivisions[dv].hours+=a.byDivision[dv].hours; teamDivisions[dv].rev+=a.byDivision[dv].rev; } });
       return {
         id:p.id, name:p.name, color:p.color,
         workDays:this.fdays(effWD),
@@ -539,6 +592,19 @@ class Component extends DCLogic {
       {label:'Revenue', value:this.fm(T.rev), sub:(T.bill>0?'\u00A3'+Math.round(T.rev/T.bill)+'/hr eff.':'\u2014'), accent:'#f05376', color:'#0e2b33'},
     ];
 
+    const divTotalHours=this.DIVISIONS.reduce((a,dv)=>a+teamDivisions[dv].hours,0);
+    const divTotalRevenue=this.DIVISIONS.reduce((a,dv)=>a+teamDivisions[dv].rev,0);
+    const buildDonut=(getVal,total)=>{
+      let acc=0; const stops=[];
+      this.DIVISIONS.forEach(dv=>{ const v=getVal(dv); const pct=total>0?(v/total*100):0; stops.push(`${this.DIVCOLOR[dv]} ${acc}% ${acc+pct}%`); acc+=pct; });
+      return total>0 ? `conic-gradient(${stops.join(',')})` : '#eef2f3';
+    };
+    const divTimeBg=buildDonut(dv=>teamDivisions[dv].hours, divTotalHours);
+    const divRevBg=buildDonut(dv=>teamDivisions[dv].rev, divTotalRevenue);
+    const divTimeLegend=this.DIVISIONS.map(dv=>({name:dv, color:this.DIVCOLOR[dv], valStr:this.fh(teamDivisions[dv].hours)+'h', pct:divTotalHours>0?Math.round(teamDivisions[dv].hours/divTotalHours*100):0}));
+    const divRevLegend=this.DIVISIONS.map(dv=>({name:dv, color:this.DIVCOLOR[dv], valStr:teamDivisions[dv].rev>0?this.fm(teamDivisions[dv].rev):'\u2014', pct:divTotalRevenue>0?Math.round(teamDivisions[dv].rev/divTotalRevenue*100):0}));
+    const hasDivData=divTotalHours>0;
+
     const clientArr=Object.keys(teamClients).map(cn=>({name:cn, ...teamClients[cn]})).sort((a,b)=>b.hours-a.hours);
     const maxH=Math.max.apply(null, clientArr.map(c=>c.hours).concat([1]));
     let cTotH=0,cTotR=0; clientArr.forEach(c=>{ cTotH+=c.hours; cTotR+=c.rev; });
@@ -558,6 +624,7 @@ class Component extends DCLogic {
     else periodLabel=seen[this.state.scope]||this.state.scope;
 
     return {
+      divTimeBg, divRevBg, divTimeLegend, divRevLegend, hasDivData,
       hasPeople:people.length>0, noPeople:people.length===0, peopleCount:people.length,
       people:people.map(p=>({name:p.name, color:p.color, importedAt:p.importedAt, onRemove:()=>this.removePerson(p.id)})),
       scope:this.state.scope, scopeOptions, periodLabel,

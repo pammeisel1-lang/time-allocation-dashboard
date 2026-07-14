@@ -253,6 +253,52 @@
           </div>
         </div>
 
+        <sc-if value="{{ hasDivData }}" hint-placeholder-val="">
+        <div class="pbk" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
+            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split \u2014 time</div>
+            <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Client Work hours by division</div>
+            <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
+              <div style="position:relative;width:150px;height:150px;">
+                <div style="position:absolute;inset:0;border-radius:50%;background:{{ divTimeBg }};"></div>
+                <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ divTimeLegend }}" as="d" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <span style="width:9px;height:9px;border-radius:2px;background:{{ d.color }};flex:none;"></span>
+                  <span style="font-size:13.5px;flex:1;">{{ d.name }}</span>
+                  <span style="font-size:12px;color:#8aa0a6;">{{ d.pct }}%</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;">{{ d.valStr }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
+            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split \u2014 revenue</div>
+            <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Billable revenue by division</div>
+            <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
+              <div style="position:relative;width:150px;height:150px;">
+                <div style="position:absolute;inset:0;border-radius:50%;background:{{ divRevBg }};"></div>
+                <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ divRevLegend }}" as="d" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <span style="width:9px;height:9px;border-radius:2px;background:{{ d.color }};flex:none;"></span>
+                  <span style="font-size:13.5px;flex:1;">{{ d.name }}</span>
+                  <span style="font-size:12px;color:#8aa0a6;">{{ d.pct }}%</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-variant-numeric:tabular-nums;">{{ d.valStr }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
         <div class="pbk" style="display:grid;grid-template-columns:1.32fr 1fr;gap:16px;">
           <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -491,7 +537,10 @@
                   <span style="width:8px;height:8px;border-radius:2px;background:{{ e.color }};flex:none;"></span>
                   <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.client }}</span>
                 </div>
-                <span style="font-size:13px;color:#3d565d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.task }}</span>
+                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                  <span style="font-size:13px;color:#3d565d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.task }}</span>
+                  <sc-if value="{{ e.division }}" hint-placeholder-val=""><span style="font-size:10.5px;font-weight:600;color:{{ e.divColor }};background:{{ e.divColor }}22;padding:2px 7px;border-radius:20px;white-space:nowrap;flex:none;">{{ e.division }}</span></sc-if>
+                </div>
                 <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ e.hoursStr }}h</span>
                 <div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;">
                   <sc-if value="{{ e.allied }}" hint-placeholder-val=""><span style="font-size:10.5px;font-weight:700;color:#9a6b00;background:rgba(255,206,109,0.32);padding:3px 7px;border-radius:20px;">-20%</span></sc-if>
@@ -668,6 +717,7 @@ class Component extends DCLogic {
     this.CATS = ['Client Work','Digital Support','Project Work','General','Annual leave'];
     this.DASH_CATS = ['Client Work','Digital Support','Project Work','General'];
     this.DIVISIONS = ['Transport','Health & Safety','HR'];
+    this.DIVCOLOR = {'Transport':'#1c8baf','Health & Safety':'#e8974d','HR':'#8b6fc9'};
     this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3'};
     this.HOURS_PER_DAY = 8; // rate & capacity basis (day rate is calculated on an 8h day)
     this.STANDARD_DAY_HOURS = 9; // actual working day \u2014 anything beyond this (per week/month) counts as overtime
@@ -1143,10 +1193,30 @@ class Component extends DCLogic {
     const tasks=tArr.map(t=>({task:t.task, hoursStr:this.fh(t.h), pct:(t.h/maxT*100).toFixed(1)}));
 
     const editId=this.state.editingId;
-    const disp=(e)=>({id:e.id, date:this.fdate(e.date), client:e.client, color:CC[e.category], task:e.task, hoursStr:this.fh(e.hours), billable:e.billable, billLabel:e.billable?'Billable':'Non-bill', billColor:e.billable?'#1f8a5b':'#5b7178', billBg:e.billable?'rgba(73,189,153,0.16)':'#eef2f3', allied:!!e.allied, rowBg:editId===e.id?'rgba(255,206,109,0.20)':'transparent', onEdit:()=>this.editEntry(e.id), onDelete:()=>this.deleteEntry(e.id)});
+    const disp=(e)=>({id:e.id, date:this.fdate(e.date), client:e.client, color:CC[e.category], task:e.task, division:e.division||null, divColor:e.division?this.DIVCOLOR[e.division]:null, hoursStr:this.fh(e.hours), billable:e.billable, billLabel:e.billable?'Billable':'Non-bill', billColor:e.billable?'#1f8a5b':'#5b7178', billBg:e.billable?'rgba(73,189,153,0.16)':'#eef2f3', allied:!!e.allied, rowBg:editId===e.id?'rgba(255,206,109,0.20)':'transparent', onEdit:()=>this.editEntry(e.id), onDelete:()=>this.deleteEntry(e.id)});
     const sorted=cur.entries.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:b.id-a.id));
     const recent=sorted.slice(0,8).map(disp);
     const monthEntries=sorted.map(disp);
+
+    const divHours={}, divRevenue={};
+    this.DIVISIONS.forEach(dv=>{ divHours[dv]=0; divRevenue[dv]=0; });
+    cur.entries.forEach(e=>{
+      if(e.category!=='Client Work' || !e.division) return;
+      divHours[e.division]=(divHours[e.division]||0)+e.hours;
+      if(e.billable){ const bh=e.billHours!=null?e.billHours:e.hours; const eff=e.allied?e.rate*0.8:e.rate; const rev=(e.revenueOverride!=null?e.revenueOverride:bh*eff); divRevenue[e.division]=(divRevenue[e.division]||0)+rev; }
+    });
+    const divTotalHours=Object.values(divHours).reduce((a,b)=>a+b,0);
+    const divTotalRevenue=Object.values(divRevenue).reduce((a,b)=>a+b,0);
+    const buildDonut=(vals,total)=>{
+      let acc=0; const stops=[];
+      this.DIVISIONS.forEach(dv=>{ const v=vals[dv]||0; const pct=total>0?(v/total*100):0; stops.push(`${this.DIVCOLOR[dv]} ${acc}% ${acc+pct}%`); acc+=pct; });
+      return total>0 ? `conic-gradient(${stops.join(',')})` : '#eef2f3';
+    };
+    const divTimeBg=buildDonut(divHours, divTotalHours);
+    const divRevBg=buildDonut(divRevenue, divTotalRevenue);
+    const divTimeLegend=this.DIVISIONS.map(dv=>({name:dv, color:this.DIVCOLOR[dv], valStr:this.fh(divHours[dv]||0)+'h', pct:divTotalHours>0?Math.round((divHours[dv]||0)/divTotalHours*100):0}));
+    const divRevLegend=this.DIVISIONS.map(dv=>({name:dv, color:this.DIVCOLOR[dv], valStr:(divRevenue[dv]||0)>0?this.fm(divRevenue[dv]):'\u2014', pct:divTotalRevenue>0?Math.round((divRevenue[dv]||0)/divTotalRevenue*100):0}));
+    const hasDivData=divTotalHours>0;
 
     const trend=this.buildTrend(cur,aCur);
 
@@ -1265,6 +1335,7 @@ class Component extends DCLogic {
       exportExcel:()=>this.exportReportsExcel(scope, fy, reportRows, reportTotals, hasMatrix, matrixMonths, matrixRows, matrixTotals),
       kpis, utilStr:Math.round(util)+'%', donutBg, billableH:this.fh(aCur.billable), nonbillH:this.fh(aCur.nonBillable),
       trend, clients, cats, tasks, recent,
+      divTimeBg, divRevBg, divTimeLegend, divRevLegend, hasDivData,
       monthEntries, monthLabel:cur.label, monthTotalStr:this.fh(aCur.total), monthBillStr:this.fh(aCur.billable), monthCount:cur.entries.length,
       f_date:f.date, f_category:f.category, f_client:f.client, f_task:f.task, f_hours:f.hours, f_days:f.days, f_note:f.note, f_fixedPrice:f.fixedPrice, showFixedPrice:!!f.billable,
       clientOptions, taskOptions, catOptions:this.CATS,
