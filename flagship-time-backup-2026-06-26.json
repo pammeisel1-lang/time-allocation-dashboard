@@ -1,0 +1,657 @@
+{
+  "v": 2,
+  "app": "flagship-time-allocation",
+  "exportedAt": "2026-06-26T07:15:09.851Z",
+  "idc": 71,
+  "months": [
+    {
+      "key": "2026-06",
+      "label": "June 2026",
+      "year": 2026,
+      "month": 6,
+      "daysInMonth": 30,
+      "lastDay": 30,
+      "isCurrent": true,
+      "entries": [
+        {
+          "id": 40,
+          "date": "2026-06-02",
+          "day": 2,
+          "client": "Rugby Council",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 41,
+          "date": "2026-06-03",
+          "day": 3,
+          "client": "Rugby Council",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 39,
+          "date": "2026-06-01",
+          "day": 1,
+          "client": "Pro-Mile",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 42,
+          "date": "2026-06-04",
+          "day": 4,
+          "client": "Sales visit",
+          "category": "General",
+          "task": "Sales visit",
+          "hours": 1.5,
+          "billable": false,
+          "rate": 0,
+          "note": "Durant Sport Initial Enquiry visit",
+          "allied": false
+        },
+        {
+          "id": 43,
+          "date": "2026-06-04",
+          "day": 4,
+          "client": "TM Mentoring Scheme",
+          "category": "Project Work",
+          "task": "Content build",
+          "hours": 6.5,
+          "billable": false,
+          "rate": 0,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 44,
+          "date": "2026-06-05",
+          "day": 5,
+          "client": "Convey",
+          "category": "Digital Support",
+          "task": "Support ticket",
+          "hours": 3,
+          "billable": false,
+          "rate": 118,
+          "note": "Pro-Mile Missing PMI docs",
+          "allied": false
+        },
+        {
+          "id": 45,
+          "date": "2026-06-05",
+          "day": 5,
+          "client": "Convey",
+          "category": "Digital Support",
+          "task": "Support ticket",
+          "hours": 1.5,
+          "billable": false,
+          "rate": 118,
+          "note": "Chase Drains / Dalrod assistance",
+          "allied": false
+        },
+        {
+          "id": 47,
+          "date": "2026-06-05",
+          "day": 5,
+          "client": "TM Mentoring Scheme",
+          "category": "Project Work",
+          "task": "Content build",
+          "hours": 3,
+          "billable": false,
+          "rate": 0,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 48,
+          "date": "2026-06-08",
+          "day": 8,
+          "client": "Pro-Mile",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 49,
+          "date": "2026-06-09",
+          "day": 9,
+          "client": "Alford Traffic",
+          "category": "Client Work",
+          "task": "Report writing",
+          "hours": 4,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 50,
+          "date": "2026-06-10",
+          "day": 10,
+          "client": "Hudson White",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 51,
+          "date": "2026-06-11",
+          "day": 11,
+          "client": "CPD",
+          "category": "General",
+          "task": "CPD",
+          "hours": 8,
+          "billable": false,
+          "rate": 0,
+          "note": "Tesco Transport Conference",
+          "allied": false
+        },
+        {
+          "id": 52,
+          "date": "2026-06-12",
+          "day": 12,
+          "client": "Online TMCPC Review",
+          "category": "Project Work",
+          "task": "Review",
+          "hours": 2,
+          "billable": false,
+          "rate": 0,
+          "note": "Case study marking",
+          "allied": false
+        },
+        {
+          "id": 53,
+          "date": "2026-06-12",
+          "day": 12,
+          "client": "Convey",
+          "category": "Digital Support",
+          "task": "Support ticket",
+          "hours": 2,
+          "billable": false,
+          "rate": 118,
+          "note": "Associated Asphalt",
+          "allied": false
+        },
+        {
+          "id": 54,
+          "date": "2026-06-12",
+          "day": 12,
+          "client": "Admin",
+          "category": "General",
+          "task": "Admin",
+          "hours": 4,
+          "billable": false,
+          "rate": 0,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 55,
+          "date": "2026-06-15",
+          "day": 15,
+          "client": "Pro-Mile",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 58,
+          "date": "2026-06-17",
+          "day": 17,
+          "client": "Bourne Skip Hire",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 4,
+          "billable": true,
+          "rate": 118,
+          "note": "FORS training",
+          "allied": true
+        },
+        {
+          "id": 59,
+          "date": "2026-06-17",
+          "day": 17,
+          "client": "Supacolour",
+          "category": "Client Work",
+          "task": "Report writing",
+          "hours": 4,
+          "billable": true,
+          "rate": 118,
+          "note": "COSHH Assesments",
+          "allied": false
+        },
+        {
+          "id": 60,
+          "date": "2026-06-22",
+          "day": 22,
+          "client": "Pro-Mile",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 61,
+          "date": "2026-06-19",
+          "day": 19,
+          "client": "NPC",
+          "category": "Client Work",
+          "task": "Advisory call",
+          "hours": 0.5,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 46,
+          "date": "2026-06-19",
+          "day": 19,
+          "client": "Admin",
+          "category": "General",
+          "task": "Admin",
+          "hours": 0.5,
+          "billable": false,
+          "rate": 0,
+          "note": "1-2-1",
+          "allied": false
+        },
+        {
+          "id": 62,
+          "date": "2026-06-19",
+          "day": 19,
+          "client": "Sales visit",
+          "category": "General",
+          "task": "Sales visit",
+          "hours": 1,
+          "billable": false,
+          "rate": 0,
+          "note": "DGSA Enquiry response",
+          "allied": false
+        },
+        {
+          "id": 63,
+          "date": "2026-06-19",
+          "day": 19,
+          "client": "Convey",
+          "category": "Digital Support",
+          "task": "Support ticket",
+          "hours": 2,
+          "billable": false,
+          "rate": 118,
+          "note": "Pro-MIle missing PMIs",
+          "allied": false
+        },
+        {
+          "id": 64,
+          "date": "2026-06-23",
+          "day": 23,
+          "client": "Mead Construction",
+          "category": "Client Work",
+          "task": "Report writing",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 65,
+          "date": "2026-06-24",
+          "day": 24,
+          "client": "Sales visit",
+          "category": "General",
+          "task": "Sales visit",
+          "hours": 3,
+          "billable": false,
+          "rate": 0,
+          "note": "BNI",
+          "allied": false
+        },
+        {
+          "id": 66,
+          "date": "2026-06-24",
+          "day": 24,
+          "client": "Transport Manager Hub",
+          "category": "Project Work",
+          "task": "Content build",
+          "hours": 4,
+          "billable": false,
+          "rate": 0,
+          "note": "Rebrand Allied Guiding Hand",
+          "allied": false
+        },
+        {
+          "id": 67,
+          "date": "2026-06-25",
+          "day": 25,
+          "client": "Hudson White",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 68,
+          "date": "2026-06-26",
+          "day": 26,
+          "client": "Admin",
+          "category": "General",
+          "task": "Admin",
+          "hours": 8,
+          "billable": false,
+          "rate": 0,
+          "note": "",
+          "allied": false
+        },
+        {
+          "id": 69,
+          "date": "2026-06-29",
+          "day": 29,
+          "client": "Pro-Mile",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": true
+        },
+        {
+          "id": 57,
+          "date": "2026-06-18",
+          "day": 18,
+          "client": "Mead Construction",
+          "category": "Client Work",
+          "task": "Compliance audit",
+          "hours": 10.5,
+          "billable": true,
+          "rate": 118,
+          "note": "Barton Mills Quarry Audit (4 days for 3 audits charged, so 10.5 each day)",
+          "allied": true
+        },
+        {
+          "id": 56,
+          "date": "2026-06-16",
+          "day": 16,
+          "client": "Mead Construction",
+          "category": "Client Work",
+          "task": "Compliance audit",
+          "hours": 10.5,
+          "billable": true,
+          "rate": 118,
+          "note": "Wilbraham Quarry Audit (4 days for 3 audits charged, so 10.5 each day)",
+          "allied": true
+        },
+        {
+          "id": 70,
+          "date": "2026-06-30",
+          "day": 30,
+          "client": "Anglia UK",
+          "category": "Client Work",
+          "task": "On-site visit",
+          "hours": 8,
+          "billable": true,
+          "rate": 118,
+          "note": "",
+          "allied": false
+        }
+      ]
+    },
+    {
+      "key": "2026-07",
+      "label": "July 2026",
+      "year": 2026,
+      "month": 7,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2026-08",
+      "label": "August 2026",
+      "year": 2026,
+      "month": 8,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2026-09",
+      "label": "September 2026",
+      "year": 2026,
+      "month": 9,
+      "daysInMonth": 30,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2026-10",
+      "label": "October 2026",
+      "year": 2026,
+      "month": 10,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2026-11",
+      "label": "November 2026",
+      "year": 2026,
+      "month": 11,
+      "daysInMonth": 30,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2026-12",
+      "label": "December 2026",
+      "year": 2026,
+      "month": 12,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2027-01",
+      "label": "January 2027",
+      "year": 2027,
+      "month": 1,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2027-02",
+      "label": "February 2027",
+      "year": 2027,
+      "month": 2,
+      "daysInMonth": 28,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2027-03",
+      "label": "March 2027",
+      "year": 2027,
+      "month": 3,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2027-04",
+      "label": "April 2027",
+      "year": 2027,
+      "month": 4,
+      "daysInMonth": 30,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    },
+    {
+      "key": "2027-05",
+      "label": "May 2027",
+      "year": 2027,
+      "month": 5,
+      "daysInMonth": 31,
+      "lastDay": 0,
+      "isCurrent": false,
+      "entries": []
+    }
+  ],
+  "work": [
+    {
+      "name": "Pro-Mile",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Hudson White",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Mead Construction",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Anglia UK",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Convey",
+      "category": "Digital Support",
+      "rate": 118
+    },
+    {
+      "name": "Optifile",
+      "category": "Digital Support",
+      "rate": 118
+    },
+    {
+      "name": "Allied",
+      "category": "Digital Support",
+      "rate": 118
+    },
+    {
+      "name": "Online TMCPC Review",
+      "category": "Project Work",
+      "rate": 0
+    },
+    {
+      "name": "TM Mentoring Scheme",
+      "category": "Project Work",
+      "rate": 0
+    },
+    {
+      "name": "Transport Manager Hub",
+      "category": "Project Work",
+      "rate": 0
+    },
+    {
+      "name": "Rugby Council",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Durant Sport",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Alford Traffic",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Bourne Skip Hire",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "General Admin",
+      "category": "Project Work",
+      "rate": 0
+    },
+    {
+      "name": "Training course",
+      "category": "General",
+      "rate": 0
+    },
+    {
+      "name": "CPD",
+      "category": "General",
+      "rate": 0
+    },
+    {
+      "name": "Admin",
+      "category": "General",
+      "rate": 0
+    },
+    {
+      "name": "Sales visit",
+      "category": "General",
+      "rate": 0
+    },
+    {
+      "name": "Supacolour",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "NPC",
+      "category": "Client Work",
+      "rate": 118
+    },
+    {
+      "name": "Annual leave",
+      "category": "Annual leave",
+      "rate": 0
+    }
+  ]
+}
