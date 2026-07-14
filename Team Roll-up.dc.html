@@ -264,7 +264,7 @@
 
       <!-- CLIENT REPORT (FULL) -->
       <sc-if value="{{ isClientReport }}" hint-placeholder-val="">
-      <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+      <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
         <div style="font-size:16px;font-weight:600;margin-bottom:3px;">Client report — full</div>
         <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">{{ periodLabel }} — all clients &amp; work, split by division</div>
         <sc-if value="{{ hasClientPivot }}" hint-placeholder-val="{{ true }}">
@@ -674,9 +674,11 @@ class Component extends DCLogic {
         let r=0;
         if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const bh=(e.billHours!=null?e.billHours:e.hours); r=(e.revenueOverride!=null?e.revenueOverride:bh*eff); bill+=bh; rev+=r; byClient[cn].rev+=r; }
         if(e.category==='Client Work' && e.division && byDivision[e.division]){ byDivision[e.division].hours+=e.hours; byDivision[e.division].rev+=r; }
-        if(!byClientDiv[cn]) byClientDiv[cn]={category:e.category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, totalH:0, totalR:0};
-        byClientDiv[cn].totalH+=e.hours; byClientDiv[cn].totalR+=r;
-        if(e.category==='Client Work' && e.division && byClientDiv[cn][e.division]){ byClientDiv[cn][e.division].h+=e.hours; byClientDiv[cn][e.division].r+=r; }
+        if(e.category==='Client Work'){
+          if(!byClientDiv[cn]) byClientDiv[cn]={category:e.category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, totalH:0, totalR:0};
+          byClientDiv[cn].totalH+=e.hours; byClientDiv[cn].totalR+=r;
+          if(e.division && byClientDiv[cn][e.division]){ byClientDiv[cn][e.division].h+=e.hours; byClientDiv[cn][e.division].r+=r; }
+        }
         if(e.task){ if(!byTask[e.task]) byTask[e.task]={hours:0}; byTask[e.task].hours+=e.hours; }
       });
     });

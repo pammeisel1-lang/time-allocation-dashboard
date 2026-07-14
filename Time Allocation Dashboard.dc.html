@@ -256,7 +256,7 @@
         <sc-if value="{{ hasDivData }}" hint-placeholder-val="">
         <div class="pbk" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
-            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split \u2014 time</div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split — time</div>
             <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Client Work hours by division</div>
             <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
               <div style="position:relative;width:150px;height:150px;">
@@ -277,7 +277,7 @@
           </div>
 
           <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;display:flex;flex-direction:column;">
-            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split \u2014 revenue</div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:2px;">Division split — revenue</div>
             <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">Billable revenue by division</div>
             <div style="display:flex;align-items:center;justify-content:center;margin:6px 0 18px;">
               <div style="position:relative;width:150px;height:150px;">
@@ -464,7 +464,7 @@
           <label style="display:flex;flex-direction:column;gap:6px;">
             <span style="font-size:12px;font-weight:600;color:#5b7178;">Fixed price (optional)</span>
             <input type="number" step="1" min="0" placeholder="e.g. 1200" value="{{ f_fixedPrice }}" onInput="{{ setFixedPrice }}" style="height:44px;border:1px solid #dfe7e8;border-radius:10px;padding:0 13px;font-family:'Space Grotesk',sans-serif;font-size:15px;color:#0e2b33;background:#fff;">
-            <span style="font-size:11.5px;color:#8aa0a6;">Revenue uses this amount instead of hours \u00D7 rate. Hours logged are unaffected \u2014 still count normally toward capacity &amp; overtime.</span>
+            <span style="font-size:11.5px;color:#8aa0a6;">Revenue uses this amount instead of hours × rate. Hours logged are unaffected — still count normally toward capacity &amp; overtime.</span>
           </label>
           </sc-if>
 
@@ -502,7 +502,7 @@
             <sc-if value="{{ backupMsg }}" hint-placeholder-val=""><span style="font-size:12px;font-weight:600;color:#1f8a5b;">{{ backupMsg }}</span></sc-if>
             <sc-if value="{{ cloudStatus }}" hint-placeholder-val=""><span style="font-size:12px;font-weight:600;color:#5b7178;">{{ cloudStatus }}</span></sc-if>
           </div>
-          <div style="font-size:11.5px;color:#8aa0a6;line-height:1.45;">Download a copy of all your time data to a file. Keep it safe \u2014 you can restore from it any time.</div>
+          <div style="font-size:11.5px;color:#8aa0a6;line-height:1.45;">Download a copy of all your time data to a file. Keep it safe — you can restore from it any time.</div>
           <div style="display:flex;gap:10px;">
             <button onClick="{{ exportData }}" style="flex:1;height:44px;border:none;border-radius:10px;background:#003a4a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5v8.5M4.8 7l3.2 3 3.2-3"></path><path d="M2.5 13.5h11"></path></svg>
