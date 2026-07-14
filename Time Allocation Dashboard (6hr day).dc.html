@@ -444,6 +444,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
             <div style="font-size:15px;font-weight:600;">Backup &amp; restore</div>
             <sc-if value="{{ backupMsg }}" hint-placeholder-val=""><span style="font-size:12px;font-weight:600;color:#1f8a5b;">{{ backupMsg }}</span></sc-if>
+            <sc-if value="{{ cloudStatus }}" hint-placeholder-val=""><span style="font-size:12px;font-weight:600;color:#5b7178;">{{ cloudStatus }}</span></sc-if>
           </div>
           <div style="font-size:11.5px;color:#8aa0a6;line-height:1.45;">Download a copy of all your time data to a file. Keep it safe \u2014 you can restore from it any time.</div>
           <div style="display:flex;gap:10px;">
@@ -667,6 +668,9 @@ class Component extends DCLogic {
     this.FY_START_MONTH = 6; // Flagship financial year starts in June
     this.LSKEY = 'fp-time-alloc-v2';
     this.PROFILE_LSKEY = 'fp-time-alloc-profile-v1';
+    this.SUPABASE_URL = 'https://jesjtdkehyzteoqhycyq.supabase.co';
+    this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Implc2p0ZGtlaHl6dGVvcWh5Y3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDAyMTcsImV4cCI6MjA5OTU3NjIxN30.SE_bWxKBHaQujC-7IuthAkVu1HeVw5sHX1SLkgnNxBk';
+    this.DASHBOARD_TYPE = '6h';
     this.idc = {v:1};
     const now=new Date();
     const ty=now.getFullYear(), tm=now.getMonth()+1, td=now.getDate();
@@ -698,6 +702,53 @@ class Component extends DCLogic {
   saveProfile(name, role){
     this.setState({profileName:name, profileRole:role, editingProfile:false});
     try{ localStorage.setItem(this.PROFILE_LSKEY, JSON.stringify({name, role})); }catch(e){}
+    this.queueCloudPush();
+  }
+
+  slugFor(name){ return (name||'unknown').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'unknown'; }
+
+  componentDidMount(){
+    this.pullCloud();
+  }
+
+  cloudHeaders(){
+    return {'apikey':this.SUPABASE_ANON_KEY, 'Authorization':'Bearer '+this.SUPABASE_ANON_KEY, 'Content-Type':'application/json'};
+  }
+
+  pullCloud(){
+    const slug=this.slugFor(this.state.profileName);
+    const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state?person_slug=eq.${encodeURIComponent(slug)}&dashboard_type=eq.${this.DASHBOARD_TYPE}&select=data,updated_at`;
+    fetch(url,{headers:{...this.cloudHeaders(),'Accept':'application/json'}})
+      .then(r=>r.ok?r.json():[])
+      .then(rows=>{
+        if(!rows || !rows.length) { this.queueCloudPush(); this.setState({cloudStatus:'synced \u2713'}); setTimeout(()=>{ if(this.state.cloudStatus) this.setState({cloudStatus:null}); },4000); return; }
+        const row=rows[0];
+        const localRaw=localStorage.getItem(this.LSKEY);
+        const localSavedAt=localRaw?(JSON.parse(localRaw).savedAt||0):0;
+        const cloudSavedAt=new Date(row.updated_at).getTime();
+        if(cloudSavedAt>localSavedAt && row.data && Array.isArray(row.data.months)){
+          if(row.data.idc) this.idc.v=Math.max(this.idc.v, row.data.idc);
+          this.save(row.data.months, row.data.work, cloudSavedAt);
+          this.setState({months:row.data.months, work:row.data.work||this.state.work, cloudStatus:'synced from cloud \u2713'});
+        } else {
+          this.queueCloudPush();
+          this.setState({cloudStatus:'synced \u2713'});
+        }
+        setTimeout(()=>{ if(this.state.cloudStatus) this.setState({cloudStatus:null}); },4000);
+      })
+      .catch(()=>{ this.setState({cloudStatus:'offline \u2014 using local data'}); setTimeout(()=>{ if(this.state.cloudStatus) this.setState({cloudStatus:null}); },4000); });
+  }
+
+  queueCloudPush(){
+    clearTimeout(this._cloudTimer);
+    this._cloudTimer=setTimeout(()=>this.pushCloud(), 1200);
+  }
+
+  pushCloud(){
+    const slug=this.slugFor(this.state.profileName);
+    const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state`;
+    const body=[{person_slug:slug, dashboard_type:this.DASHBOARD_TYPE, data:{months:this.state.months, work:this.state.work, idc:this.idc.v}, updated_at:new Date().toISOString()}];
+    fetch(url,{method:'POST', headers:{...this.cloudHeaders(),'Prefer':'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify(body)}).catch(()=>{});
   }
 
   rng(seed){ let s=seed>>>0; return function(){ s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s>>>15), 1|s); t = (t + Math.imul(t ^ (t>>>7), 61|t)) ^ t; return ((t ^ (t>>>14))>>>0)/4294967296; }; }
@@ -891,8 +942,9 @@ class Component extends DCLogic {
     reader.readAsText(file);
   }
 
-  save(months, work){
-    try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:2, idc:this.idc.v, months:months||this.state.months, work:work||this.state.work})); }catch(e){}
+  save(months, work, savedAt){
+    try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:2, idc:this.idc.v, months:months||this.state.months, work:work||this.state.work, savedAt:savedAt||Date.now()})); }catch(e){}
+    if(!savedAt) this.queueCloudPush();
   }
 
   weekKeyFor(dateStr){
@@ -1227,6 +1279,7 @@ class Component extends DCLogic {
       exportData:()=>this.exportData(),
       importData:(e)=>{ const f=e.target.files&&e.target.files[0]; this.importData(f); e.target.value=''; },
       backupMsg:this.state.backupMsg||null,
+      cloudStatus:this.state.cloudStatus||null,
       billableSwitchBg:(f.billable && !projectLock && f.category!=='Annual leave')?'#49bd99':'#cdd9db',
       billableKnobX:(f.billable && !projectLock && f.category!=='Annual leave')?'22px':'2px',
       billableLabel: f.category==='Annual leave' ? 'Annual leave (non-billable)' : (projectLock?'Non-billable (internal project)':(f.billable?'Billable':'Non-billable')),
