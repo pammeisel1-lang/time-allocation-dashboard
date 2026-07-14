@@ -45,6 +45,12 @@
     <div class="no-print" style="display:flex;align-items:center;gap:10px;">
       <sc-if value="{{ hasPeople }}" hint-placeholder-val="">
         <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #dfe7e8;border-radius:10px;padding:0 4px 0 13px;height:42px;">
+          <span style="font-size:12px;color:#5b7178;font-weight:500;">Report</span>
+          <select value="{{ report }}" onChange="{{ setReport }}" style="border:none;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:#0e2b33;padding:0 8px;height:40px;cursor:pointer;">
+            <sc-for list="{{ reportOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #dfe7e8;border-radius:10px;padding:0 4px 0 13px;height:42px;">
           <span style="font-size:12px;color:#5b7178;font-weight:500;">Period</span>
           <select value="{{ scope }}" onChange="{{ setScope }}" style="border:none;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:#0e2b33;padding:0 8px;height:40px;cursor:pointer;">
             <sc-for list="{{ scopeOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
@@ -131,6 +137,7 @@
         <button onClick="{{ clearAll }}" class="no-print" style="height:38px;padding:0 14px;border-radius:9px;border:1px solid #f6d6dd;background:#fff;color:#f05376;font-size:13px;font-weight:600;cursor:pointer;">Clear all</button>
       </div>
 
+      <sc-if value="{{ isTotals }}" hint-placeholder-val="{{ true }}">
       <div class="pbk" style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;">
         <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="6">
           <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
@@ -253,6 +260,114 @@
           <div style="padding:28px 6px;text-align:center;color:#8aa0a6;font-size:14px;">No time logged in this period.</div>
         </sc-if>
       </div>
+      </sc-if>
+
+      <!-- CLIENT REPORT (FULL) -->
+      <sc-if value="{{ isClientReport }}" hint-placeholder-val="">
+      <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+        <div style="font-size:16px;font-weight:600;margin-bottom:3px;">Client report — full</div>
+        <div style="font-size:12.5px;color:#5b7178;margin-bottom:16px;">{{ periodLabel }} — all clients &amp; work, split by division</div>
+        <sc-if value="{{ hasClientPivot }}" hint-placeholder-val="{{ true }}">
+        <div style="overflow-x:auto;">
+        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;padding:0 6px 11px;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;min-width:1000px;">
+          <span>Client / work</span>
+          <span style="text-align:right;color:#1c8baf;">Transport h</span><span style="text-align:right;color:#1c8baf;">Transport £</span>
+          <span style="text-align:right;color:#e8974d;">H&amp;S h</span><span style="text-align:right;color:#e8974d;">H&amp;S £</span>
+          <span style="text-align:right;color:#8b6fc9;">HR h</span><span style="text-align:right;color:#8b6fc9;">HR £</span>
+          <span style="text-align:right;">Total h</span><span style="text-align:right;">Total £</span>
+        </div>
+        <sc-for list="{{ clientPivotRows }}" as="c" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:11px 6px;border-bottom:1px solid #f3f6f6;min-width:1000px;">
+            <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.transportH }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.transportR }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.hsH }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.hsR }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.hrH }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.hrR }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ c.totalH }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ c.totalR }}</span>
+          </div>
+        </sc-for>
+        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:13px 6px 2px;border-top:2px solid #d6dfe1;margin-top:4px;min-width:1000px;">
+          <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Total</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.transportH }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.transportR }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hsH }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hsR }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hrH }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hrR }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.totalH }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.totalR }}</span>
+        </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ noClients }}" hint-placeholder-val="">
+          <div style="padding:28px 6px;text-align:center;color:#8aa0a6;font-size:14px;">No time logged in this period.</div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <!-- OVERTIME REPORT -->
+      <sc-if value="{{ isOvertimeReport }}" hint-placeholder-val="">
+      <div class="pbk" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#5b7178;text-transform:uppercase;">Total overtime</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:600;line-height:1;color:#c98a00;">{{ otTotalStr }}</span>
+          <span style="font-size:12px;color:#8aa0a6;">{{ otPeopleCount }} of {{ peopleCount }} people over capacity</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#5b7178;text-transform:uppercase;">{{ periodLabel }}</span>
+          <span style="font-size:13px;color:#5b7178;line-height:1.5;">Client &amp; task breakdown below is built from all hours logged by people who have overtime this period — it shows where their time went, not a direct cause-and-effect link.</span>
+        </div>
+      </div>
+
+      <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px;">Overtime by person</div>
+        <sc-if value="{{ hasOvertime }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;padding:0 6px 11px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;">
+          <span>Person</span><span style="text-align:right;">Overtime</span>
+        </div>
+        <sc-for list="{{ otPersonRows }}" as="p" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid #f3f6f6;">
+            <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+              <span style="width:9px;height:9px;border-radius:50%;background:{{ p.color }};flex:none;"></span>
+              <span style="font-size:13.5px;font-weight:500;">{{ p.name }}</span>
+            </div>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;color:#c98a00;font-variant-numeric:tabular-nums;">{{ p.overtime }}</span>
+          </div>
+        </sc-for>
+        </sc-if>
+        <sc-if value="{{ noOvertime }}" hint-placeholder-val="">
+          <div style="padding:28px 6px;text-align:center;color:#8aa0a6;font-size:14px;">No overtime logged in this period.</div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ hasOvertime }}" hint-placeholder-val="">
+      <div class="pbk" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Hours by client \u2014 overtime people</div>
+          <sc-for list="{{ otClientRows }}" as="c" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:1.6fr 0.7fr 1fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:1px solid #f3f6f6;">
+              <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
+              <div style="height:8px;border-radius:5px;background:#eef2f3;overflow:hidden;"><div style="height:100%;width:{{ c.pct }}%;background:#c98a00;border-radius:5px;"></div></div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.hoursStr }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Hours by task \u2014 overtime people</div>
+          <sc-for list="{{ otTaskRows }}" as="t" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:1.6fr 0.7fr 1fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:1px solid #f3f6f6;">
+              <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.name }}</span>
+              <div style="height:8px;border-radius:5px;background:#eef2f3;overflow:hidden;"><div style="height:100%;width:{{ t.pct }}%;background:#1c8baf;border-radius:5px;"></div></div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ t.hoursStr }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+      </sc-if>
 
       </sc-if>
 
@@ -284,7 +399,7 @@ class Component extends DCLogic {
     let people=[];
     try{ const raw=localStorage.getItem(this.LSKEY); if(raw){ const o=JSON.parse(raw); if(o&&Array.isArray(o.people)) people=o.people; } }catch(e){}
     this.pid = people.reduce((a,p)=>Math.max(a,p.id||0),0)+1;
-    this.state = { people, scope:'mtd', dragActive:false };
+    this.state = { people, scope:'mtd', report:'totals', dragActive:false };
   }
 
   persist(people){ try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:1, people})); }catch(e){} }
@@ -442,8 +557,39 @@ class Component extends DCLogic {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
   }
 
-  exportRollupExcel(periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals){
+  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otClientRows, otTaskRows, otTotalStr){
     const rows=[];
+    const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    if(report==='clients'){
+      rows.push(['Client report (full) \u2014 '+periodLabel]);
+      rows.push([]);
+      rows.push(['Client / work','Transport h','Transport £','Health & Safety h','Health & Safety £','HR h','HR £','Total h','Total £']);
+      clientPivotRows.forEach(c=>{ rows.push([c.name, c.transportH, c.transportR, c.hsH, c.hsR, c.hrH, c.hrR, c.totalH, c.totalR]); });
+      rows.push(['Total','','','','','','', clientPivotTotals.totalH, clientPivotTotals.totalR]);
+      this.downloadCsv(`team-client-report-${stamp}.csv`, rows);
+      return;
+    }
+
+    if(report==='overtime'){
+      rows.push(['Overtime report \u2014 '+periodLabel]);
+      rows.push(['Total overtime', otTotalStr]);
+      rows.push([]);
+      rows.push(['Overtime by person']);
+      rows.push(['Person','Overtime']);
+      otPersonRows.forEach(p=>{ rows.push([p.name, p.overtime]); });
+      rows.push([]);
+      rows.push(['Hours by client \u2014 overtime people']);
+      rows.push(['Client / work','Hours']);
+      otClientRows.forEach(c=>{ rows.push([c.name, c.hoursStr]); });
+      rows.push([]);
+      rows.push(['Hours by task \u2014 overtime people']);
+      rows.push(['Task','Hours']);
+      otTaskRows.forEach(t=>{ rows.push([t.name, t.hoursStr]); });
+      this.downloadCsv(`team-overtime-report-${stamp}.csv`, rows);
+      return;
+    }
+
     rows.push(['Team roll-up \u2014 '+periodLabel]);
     rows.push([]);
     rows.push(['Person','Work days','Total hours','Billable hours','Utilisation','Cap. used','Leave','Revenue','Overtime']);
@@ -456,7 +602,6 @@ class Component extends DCLogic {
       clientRows.forEach(c=>{ rows.push([c.name, c.hours, c.revenue]); });
       rows.push(['Total', clientTotals.hours, clientTotals.revenue]);
     }
-    const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     this.downloadCsv(`team-rollup-${stamp}.csv`, rows);
   }
 
@@ -471,7 +616,7 @@ class Component extends DCLogic {
   }
 
   aggPerson(person, keys){
-    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={};
+    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={};
     this.DIVISIONS.forEach(dv=>{ byDivision[dv]={hours:0,rev:0}; });
     const otm=person.overtimeByMonth||{};
     keys.forEach(k=>{ if(otm[k]) ot+=otm[k].monthlyOT||0; });
@@ -486,9 +631,13 @@ class Component extends DCLogic {
         let r=0;
         if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const bh=(e.billHours!=null?e.billHours:e.hours); r=(e.revenueOverride!=null?e.revenueOverride:bh*eff); bill+=bh; rev+=r; byClient[cn].rev+=r; }
         if(e.category==='Client Work' && e.division && byDivision[e.division]){ byDivision[e.division].hours+=e.hours; byDivision[e.division].rev+=r; }
+        if(!byClientDiv[cn]) byClientDiv[cn]={category:e.category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, totalH:0, totalR:0};
+        byClientDiv[cn].totalH+=e.hours; byClientDiv[cn].totalR+=r;
+        if(e.category==='Client Work' && e.division && byClientDiv[cn][e.division]){ byClientDiv[cn][e.division].h+=e.hours; byClientDiv[cn][e.division].r+=r; }
+        if(e.task){ if(!byTask[e.task]) byTask[e.task]={hours:0}; byTask[e.task].hours+=e.hours; }
       });
     });
-    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision};
+    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask};
   }
 
   deriveName(fileName){
@@ -548,16 +697,30 @@ class Component extends DCLogic {
 
     let T={total:0,bill:0,rev:0,leave:0,nonbill:0,capH:0};
     const teamClients={};
+    const teamClientDiv={};
     const teamDivisions={}; this.DIVISIONS.forEach(dv=>{ teamDivisions[dv]={hours:0,rev:0}; });
+    const otTeamClients={}, otTeamTasks={};
+    const personAggs=[];
     const personRows=people.map(p=>{
       const a=this.aggPerson(p, keys);
+      personAggs.push({p,a});
       const leaveDays=a.leave/this.HPD;
       const effWD=Math.max(rawWD-leaveDays,0);
       const sd=p.standardDayHours||9;
       const capH=effWD*sd;
       T.total+=a.total; T.bill+=a.bill; T.rev+=a.rev; T.leave+=a.leave; T.nonbill+=a.nonbill; T.capH+=capH; T.ot=(T.ot||0)+a.ot;
       Object.keys(a.byClient).forEach(cn=>{ if(!teamClients[cn]) teamClients[cn]={hours:0,rev:0,category:a.byClient[cn].category}; teamClients[cn].hours+=a.byClient[cn].hours; teamClients[cn].rev+=a.byClient[cn].rev; });
+      Object.keys(a.byClientDiv||{}).forEach(cn=>{
+        if(!teamClientDiv[cn]) teamClientDiv[cn]={category:a.byClientDiv[cn].category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, totalH:0, totalR:0};
+        const src=a.byClientDiv[cn];
+        this.DIVISIONS.forEach(dv=>{ teamClientDiv[cn][dv].h+=src[dv].h; teamClientDiv[cn][dv].r+=src[dv].r; });
+        teamClientDiv[cn].totalH+=src.totalH; teamClientDiv[cn].totalR+=src.totalR;
+      });
       this.DIVISIONS.forEach(dv=>{ if(a.byDivision && a.byDivision[dv]){ teamDivisions[dv].hours+=a.byDivision[dv].hours; teamDivisions[dv].rev+=a.byDivision[dv].rev; } });
+      if(a.ot>0){
+        Object.keys(a.byClient).forEach(cn=>{ otTeamClients[cn]=(otTeamClients[cn]||0)+a.byClient[cn].hours; });
+        Object.keys(a.byTask||{}).forEach(tk=>{ otTeamTasks[tk]=(otTeamTasks[tk]||0)+a.byTask[tk].hours; });
+      }
       return {
         id:p.id, name:p.name, color:p.color,
         workDays:this.fdays(effWD),
@@ -611,6 +774,43 @@ class Component extends DCLogic {
     const clientRows=clientArr.map(c=>({name:c.name, color:CC[c.category]||'#5b7178', pct:(c.hours/maxH*100).toFixed(1), hours:this.fh(c.hours)+'h', revenue:c.rev>0?this.fm(c.rev):'\u2014'}));
     const clientTotals={hours:this.fh(cTotH)+'h', revenue:this.fm(cTotR)};
 
+    const pivotArr=Object.keys(teamClientDiv).map(cn=>({name:cn, ...teamClientDiv[cn]})).sort((a,b)=>b.totalH-a.totalH);
+    const fhOrDash=(v)=>v>0?this.fh(v):'\u2014';
+    const fmOrDash=(v)=>v>0?this.fm(v):'\u2014';
+    const clientPivotRows=pivotArr.map(c=>({
+      name:c.name,
+      transportH:fhOrDash(c.Transport.h), transportR:fmOrDash(c.Transport.r),
+      hsH:fhOrDash(c['Health & Safety'].h), hsR:fmOrDash(c['Health & Safety'].r),
+      hrH:fhOrDash(c.HR.h), hrR:fmOrDash(c.HR.r),
+      totalH:this.fh(c.totalH)+'h', totalR:fmOrDash(c.totalR),
+    }));
+    let pvT={Transport:{h:0,r:0},'Health & Safety':{h:0,r:0},HR:{h:0,r:0},totalH:0,totalR:0};
+    pivotArr.forEach(c=>{ this.DIVISIONS.forEach(dv=>{ pvT[dv].h+=c[dv].h; pvT[dv].r+=c[dv].r; }); pvT.totalH+=c.totalH; pvT.totalR+=c.totalR; });
+    const clientPivotTotals={
+      transportH:fhOrDash(pvT.Transport.h), transportR:fmOrDash(pvT.Transport.r),
+      hsH:fhOrDash(pvT['Health & Safety'].h), hsR:fmOrDash(pvT['Health & Safety'].r),
+      hrH:fhOrDash(pvT.HR.h), hrR:fmOrDash(pvT.HR.r),
+      totalH:this.fh(pvT.totalH)+'h', totalR:fmOrDash(pvT.totalR),
+    };
+    const hasClientPivot=clientPivotRows.length>0;
+
+    const otPersonRows=personAggs.filter(x=>x.a.ot>0).map(x=>({name:x.p.name, color:x.p.color, overtime:this.fh(x.a.ot)+'h'})).sort((a,b)=>parseFloat(b.overtime)-parseFloat(a.overtime));
+    const otClientArr=Object.keys(otTeamClients).map(cn=>({name:cn, hours:otTeamClients[cn]})).sort((a,b)=>b.hours-a.hours).slice(0,10);
+    const otTaskArr=Object.keys(otTeamTasks).map(tk=>({name:tk, hours:otTeamTasks[tk]})).sort((a,b)=>b.hours-a.hours).slice(0,10);
+    const otMaxC=Math.max.apply(null, otClientArr.map(c=>c.hours).concat([1]));
+    const otMaxT=Math.max.apply(null, otTaskArr.map(t=>t.hours).concat([1]));
+    const otClientRows=otClientArr.map(c=>({name:c.name, pct:(c.hours/otMaxC*100).toFixed(1), hoursStr:this.fh(c.hours)+'h'}));
+    const otTaskRows=otTaskArr.map(t=>({name:t.name, pct:(t.hours/otMaxT*100).toFixed(1), hoursStr:this.fh(t.hours)+'h'}));
+    const hasOvertime=otPersonRows.length>0;
+    const otPeopleCount=otPersonRows.length;
+    const otTotalStr=this.fh(T.ot||0)+'h';
+
+    const reportOptions=[
+      {value:'totals', label:'Team totals'},
+      {value:'clients', label:'Client report (full)'},
+      {value:'overtime', label:'Overtime report'},
+    ];
+
     const scopeOptions=[
       {value:'mtd', label:new Date(this.today.y,this.today.m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'})+' (to date)'},
       {value:'fy', label:'FY '+this.fyStartFor(this.today.y,this.today.m)+'/'+String((this.fyStartFor(this.today.y,this.today.m)+1)%100)+' to date'},
@@ -625,6 +825,10 @@ class Component extends DCLogic {
 
     return {
       divTimeBg, divRevBg, divTimeLegend, divRevLegend, hasDivData,
+      report:this.state.report, reportOptions, setReport:(e)=>this.setState({report:e.target.value}),
+      isTotals:this.state.report==='totals', isClientReport:this.state.report==='clients', isOvertimeReport:this.state.report==='overtime',
+      clientPivotRows, clientPivotTotals, hasClientPivot,
+      otPersonRows, otClientRows, otTaskRows, hasOvertime, noOvertime:!hasOvertime, otPeopleCount, otTotalStr,
       hasPeople:people.length>0, noPeople:people.length===0, peopleCount:people.length,
       people:people.map(p=>({name:p.name, color:p.color, importedAt:p.importedAt, onRemove:()=>this.removePerson(p.id)})),
       scope:this.state.scope, scopeOptions, periodLabel,
@@ -644,7 +848,7 @@ class Component extends DCLogic {
       dropBg:this.state.dragActive?'rgba(28,139,175,0.06)':'#fafcfc',
       setScope:(e)=>this.setState({scope:e.target.value}),
       exportPrint:()=>window.print(),
-      exportExcel:()=>this.exportRollupExcel(periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals),
+      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otClientRows, otTaskRows, otTotalStr),
       clearAll:()=>this.clearAll(),
     };
   }
