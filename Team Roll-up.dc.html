@@ -344,28 +344,27 @@
       </div>
 
       <sc-if value="{{ hasOvertime }}" hint-placeholder-val="">
-      <div class="pbk" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
-          <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Hours by client \u2014 overtime people</div>
-          <sc-for list="{{ otClientRows }}" as="c" hint-placeholder-count="6">
-            <div style="display:grid;grid-template-columns:1.6fr 0.7fr 1fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:1px solid #f3f6f6;">
-              <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
-              <div style="height:8px;border-radius:5px;background:#eef2f3;overflow:hidden;"><div style="height:100%;width:{{ c.pct }}%;background:#c98a00;border-radius:5px;"></div></div>
-              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.hoursStr }}</span>
-            </div>
-          </sc-for>
+      <sc-for list="{{ otPersonRows }}" as="p" hint-placeholder-count="1">
+      <sc-if value="{{ p.hasDayRows }}" hint-placeholder-val="">
+      <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px;">
+          <span style="width:9px;height:9px;border-radius:50%;background:{{ p.color }};flex:none;"></span>
+          <div style="font-size:15px;font-weight:600;">{{ p.name }} — days over capacity</div>
         </div>
-        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
-          <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Hours by task \u2014 overtime people</div>
-          <sc-for list="{{ otTaskRows }}" as="t" hint-placeholder-count="6">
-            <div style="display:grid;grid-template-columns:1.6fr 0.7fr 1fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:1px solid #f3f6f6;">
-              <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.name }}</span>
-              <div style="height:8px;border-radius:5px;background:#eef2f3;overflow:hidden;"><div style="height:100%;width:{{ t.pct }}%;background:#1c8baf;border-radius:5px;"></div></div>
-              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ t.hoursStr }}</span>
-            </div>
-          </sc-for>
+        <div style="display:grid;grid-template-columns:1fr 0.8fr 0.7fr 2.4fr;gap:12px;padding:0 6px 11px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;">
+          <span>Date</span><span style="text-align:right;">Logged</span><span style="text-align:right;">Over by</span><span>Worked on</span>
         </div>
+        <sc-for list="{{ p.dayRows }}" as="d" hint-placeholder-count="2">
+          <div style="display:grid;grid-template-columns:1fr 0.8fr 0.7fr 2.4fr;gap:12px;align-items:start;padding:11px 6px;border-bottom:1px solid #f3f6f6;">
+            <span style="font-size:13.5px;font-weight:500;">{{ d.date }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ d.totalStr }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;text-align:right;color:#c98a00;font-variant-numeric:tabular-nums;">{{ d.overStr }}</span>
+            <span style="font-size:12.5px;color:#3d565d;line-height:1.5;">{{ d.itemsStr }}</span>
+          </div>
+        </sc-for>
       </div>
+      </sc-if>
+      </sc-for>
       </sc-if>
       </sc-if>
 
@@ -458,6 +457,52 @@ class Component extends DCLogic {
     const monthlyCap=Math.max((cal.workingDays-leaveDaysTotal)*SD, 0);
     const monthlyOT=Math.max(workedTotal-monthlyCap, 0);
     return {weeklyOT, monthlyOT};
+  }
+
+  overtimeDaysFor(person, keys, SD, HPD){
+    // Find weeks where worked hours exceeded weekly capacity, then list the specific days in
+    // those weeks with what was logged, so the report can show cause not just a total.
+    const weeks={};
+    (person.months||[]).forEach(m=>{
+      if(keys.indexOf(m.key)<0) return;
+      const dim=new Date(m.year,m.month,0).getDate();
+      for(let d=1; d<=dim; d++){
+        const dow=new Date(m.year,m.month-1,d).getDay();
+        const iso=`${m.year}-${String(m.month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if(dow>=1 && dow<=5 && !this.BH.has(iso)){
+          const wk=this.weekKeyFor(iso);
+          if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0, days:{}};
+          weeks[wk].workDays++;
+        }
+      }
+      (m.entries||[]).forEach(e=>{
+        const wk=this.weekKeyFor(e.date);
+        if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0, days:{}};
+        if(e.category==='Annual leave'){ weeks[wk].leave+=e.hours; return; }
+        weeks[wk].worked+=e.hours;
+        if(!weeks[wk].days[e.date]) weeks[wk].days[e.date]={total:0, items:[]};
+        weeks[wk].days[e.date].total+=e.hours;
+        weeks[wk].days[e.date].items.push({client:e.client, task:e.task, hours:e.hours});
+      });
+    });
+    const overWeeks=Object.keys(weeks).filter(wk=>{
+      const w=weeks[wk];
+      const leaveDaysWk=w.leave/HPD;
+      const cap=Math.max((w.workDays-leaveDaysWk)*SD, 0);
+      return w.worked>cap+0.01;
+    });
+    const dayRows=[];
+    overWeeks.forEach(wk=>{
+      Object.keys(weeks[wk].days).sort().forEach(dateIso=>{
+        const dd=weeks[wk].days[dateIso];
+        const gap=dd.total-SD;
+        if(gap>0.24){
+          const itemsStr=dd.items.map(it=>`${it.client} (${it.task}, ${this.fh(it.hours)}h)`).join('; ');
+          dayRows.push({dateIso, date:new Date(dateIso+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}), totalStr:this.fh(dd.total)+'h', overStr:'+'+this.fh(gap)+'h', itemsStr});
+        }
+      });
+    });
+    return dayRows.sort((a,b)=>a.dateIso<b.dateIso?1:-1);
   }
 
   nameFromSlug(slug){ return (slug||'unknown').split('-').filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')||'Unnamed'; }
@@ -557,7 +602,7 @@ class Component extends DCLogic {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
   }
 
-  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otClientRows, otTaskRows, otTotalStr){
+  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr){
     const rows=[];
     const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
@@ -578,14 +623,12 @@ class Component extends DCLogic {
       rows.push(['Overtime by person']);
       rows.push(['Person','Overtime']);
       otPersonRows.forEach(p=>{ rows.push([p.name, p.overtime]); });
-      rows.push([]);
-      rows.push(['Hours by client \u2014 overtime people']);
-      rows.push(['Client / work','Hours']);
-      otClientRows.forEach(c=>{ rows.push([c.name, c.hoursStr]); });
-      rows.push([]);
-      rows.push(['Hours by task \u2014 overtime people']);
-      rows.push(['Task','Hours']);
-      otTaskRows.forEach(t=>{ rows.push([t.name, t.hoursStr]); });
+      otPersonRows.forEach(p=>{
+        rows.push([]);
+        rows.push([p.name+' \u2014 overtime days']);
+        rows.push(['Date','Hours logged','Over by','Worked on']);
+        (p.dayRows||[]).forEach(d=>{ rows.push([d.date, d.totalStr, d.overStr, d.itemsStr]); });
+      });
       this.downloadCsv(`team-overtime-report-${stamp}.csv`, rows);
       return;
     }
@@ -699,7 +742,6 @@ class Component extends DCLogic {
     const teamClients={};
     const teamClientDiv={};
     const teamDivisions={}; this.DIVISIONS.forEach(dv=>{ teamDivisions[dv]={hours:0,rev:0}; });
-    const otTeamClients={}, otTeamTasks={};
     const personAggs=[];
     const personRows=people.map(p=>{
       const a=this.aggPerson(p, keys);
@@ -717,10 +759,7 @@ class Component extends DCLogic {
         teamClientDiv[cn].totalH+=src.totalH; teamClientDiv[cn].totalR+=src.totalR;
       });
       this.DIVISIONS.forEach(dv=>{ if(a.byDivision && a.byDivision[dv]){ teamDivisions[dv].hours+=a.byDivision[dv].hours; teamDivisions[dv].rev+=a.byDivision[dv].rev; } });
-      if(a.ot>0){
-        Object.keys(a.byClient).forEach(cn=>{ otTeamClients[cn]=(otTeamClients[cn]||0)+a.byClient[cn].hours; });
-        Object.keys(a.byTask||{}).forEach(tk=>{ otTeamTasks[tk]=(otTeamTasks[tk]||0)+a.byTask[tk].hours; });
-      }
+
       return {
         id:p.id, name:p.name, color:p.color,
         workDays:this.fdays(effWD),
@@ -794,13 +833,12 @@ class Component extends DCLogic {
     };
     const hasClientPivot=clientPivotRows.length>0;
 
-    const otPersonRows=personAggs.filter(x=>x.a.ot>0).map(x=>({name:x.p.name, color:x.p.color, overtime:this.fh(x.a.ot)+'h'})).sort((a,b)=>parseFloat(b.overtime)-parseFloat(a.overtime));
-    const otClientArr=Object.keys(otTeamClients).map(cn=>({name:cn, hours:otTeamClients[cn]})).sort((a,b)=>b.hours-a.hours).slice(0,10);
-    const otTaskArr=Object.keys(otTeamTasks).map(tk=>({name:tk, hours:otTeamTasks[tk]})).sort((a,b)=>b.hours-a.hours).slice(0,10);
-    const otMaxC=Math.max.apply(null, otClientArr.map(c=>c.hours).concat([1]));
-    const otMaxT=Math.max.apply(null, otTaskArr.map(t=>t.hours).concat([1]));
-    const otClientRows=otClientArr.map(c=>({name:c.name, pct:(c.hours/otMaxC*100).toFixed(1), hoursStr:this.fh(c.hours)+'h'}));
-    const otTaskRows=otTaskArr.map(t=>({name:t.name, pct:(t.hours/otMaxT*100).toFixed(1), hoursStr:this.fh(t.hours)+'h'}));
+    const otPersonRows=personAggs.filter(x=>x.a.ot>0).map(x=>{
+      const sd=x.p.standardDayHours||9;
+      const hpd=sd===6?6:8;
+      const dayRows=this.overtimeDaysFor(x.p, keys, sd, hpd);
+      return {name:x.p.name, color:x.p.color, overtime:this.fh(x.a.ot)+'h', dayRows, hasDayRows:dayRows.length>0};
+    }).sort((a,b)=>parseFloat(b.overtime)-parseFloat(a.overtime));
     const hasOvertime=otPersonRows.length>0;
     const otPeopleCount=otPersonRows.length;
     const otTotalStr=this.fh(T.ot||0)+'h';
@@ -828,7 +866,7 @@ class Component extends DCLogic {
       report:this.state.report, reportOptions, setReport:(e)=>this.setState({report:e.target.value}),
       isTotals:this.state.report==='totals', isClientReport:this.state.report==='clients', isOvertimeReport:this.state.report==='overtime',
       clientPivotRows, clientPivotTotals, hasClientPivot,
-      otPersonRows, otClientRows, otTaskRows, hasOvertime, noOvertime:!hasOvertime, otPeopleCount, otTotalStr,
+      otPersonRows, hasOvertime, noOvertime:!hasOvertime, otPeopleCount, otTotalStr,
       hasPeople:people.length>0, noPeople:people.length===0, peopleCount:people.length,
       people:people.map(p=>({name:p.name, color:p.color, importedAt:p.importedAt, onRemove:()=>this.removePerson(p.id)})),
       scope:this.state.scope, scopeOptions, periodLabel,
@@ -848,7 +886,7 @@ class Component extends DCLogic {
       dropBg:this.state.dragActive?'rgba(28,139,175,0.06)':'#fafcfc',
       setScope:(e)=>this.setState({scope:e.target.value}),
       exportPrint:()=>window.print(),
-      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otClientRows, otTaskRows, otTotalStr),
+      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr),
       clearAll:()=>this.clearAll(),
     };
   }
