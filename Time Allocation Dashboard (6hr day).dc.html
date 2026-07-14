@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -365,6 +366,16 @@
             </select>
           </label>
 
+          <sc-if value="{{ showDivisionField }}" hint-placeholder-val="">
+          <label style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:12px;font-weight:600;color:#5b7178;">Division</span>
+            <select value="{{ f_division }}" onChange="{{ setDivision }}" style="height:44px;border:1px solid #dfe7e8;border-radius:10px;padding:0 13px;font-family:inherit;font-size:14px;color:#0e2b33;background:#fff;cursor:pointer;">
+              <option value="">Select division…</option>
+              <sc-for list="{{ divisionOptions }}" as="dv" hint-placeholder-count="3"><option value="{{ dv }}">{{ dv }}</option></sc-for>
+            </select>
+          </label>
+          </sc-if>
+
           <sc-if value="{{ showTaskField }}" hint-placeholder-val="{{ true }}">
           <label style="display:flex;flex-direction:column;gap:6px;">
             <span style="font-size:12px;font-weight:600;color:#5b7178;">Task</span>
@@ -657,6 +668,7 @@ class Component extends DCLogic {
     this.WORK.forEach(w=>{ this.workMap[w.name]=w; });
     this.CATS = ['Client Work','Digital Support','Project Work','General','Annual leave'];
     this.DASH_CATS = ['Client Work','Digital Support','Project Work','General'];
+    this.DIVISIONS = ['Transport','Health & Safety','HR'];
     this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3'};
     this.HOURS_PER_DAY = 6; // rate & capacity basis
     this.STANDARD_DAY_HOURS = 6; // her contracted day — no gap, overtime starts after 6h/day
@@ -692,7 +704,7 @@ class Component extends DCLogic {
       editingId:null,
       newClientName:'',
       newClientCat:'Client Work',
-      form:{ category:'Client Work', client:'Pro-Mile', task:'Advisory call', hours:'', entryMode:'hours', days:'1', billable:true, date:todayIso, note:'', allied:false, fixedPrice:'' },
+      form:{ category:'Client Work', client:'Pro-Mile', task:'Advisory call', hours:'', entryMode:'hours', days:'1', billable:true, date:todayIso, note:'', allied:false, fixedPrice:'', division:'' },
       editingProfile:false,
       profileName:(profile && profile.name) || (this.props && this.props.userName) || 'Pam Meisel',
       profileRole:(profile && profile.role) || (this.props && this.props.userRole) || 'Transport & compliance',
@@ -1064,6 +1076,7 @@ class Component extends DCLogic {
 
   addEntry(){
     const f=this.state.form;
+    if(f.category==='Client Work' && !f.division){ return; }
     const isDay=f.entryMode==='day';
     let hrs, billHrs, days=null;
     if(isDay){
@@ -1088,10 +1101,10 @@ class Component extends DCLogic {
     const ens=this.ensureMonth(base, y, mo);
     const months=ens.months, tm=ens.target;
     const id = editId!=null ? editId : this.idc.v++;
-    tm.entries.push({id, date:f.date, day:d, client:f.client, category:f.category, task:f.task, hours:hrs, billHours:billHrs, entryMode:f.entryMode||'hours', days, billable, revenueOverride, rate:w?w.rate:0, note:f.note, allied:!!f.allied});
+    tm.entries.push({id, date:f.date, day:d, client:f.client, category:f.category, task:f.task, hours:hrs, billHours:billHrs, entryMode:f.entryMode||'hours', days, billable, revenueOverride, division:f.category==='Client Work'?f.division:undefined, rate:w?w.rate:0, note:f.note, allied:!!f.allied});
     if(d>tm.lastDay) tm.lastDay=d;
     this.save(months, this.state.work);
-    this.setState({months, monthKey:tm.key, editingId:null, form:{...f, hours:'', days:'1', note:''}});
+    this.setState({months, monthKey:tm.key, editingId:null, form:{...f, hours:'', days:'1', note:'', division:''}});
   }
 
   renderVals(){
@@ -1257,6 +1270,8 @@ class Component extends DCLogic {
       f_date:f.date, f_category:f.category, f_client:f.client, f_task:f.task, f_hours:f.hours, f_days:f.days, f_note:f.note, f_fixedPrice:f.fixedPrice, showFixedPrice:!!f.billable,
       clientOptions, taskOptions, catOptions:this.CATS,
       showTaskField: (f.category!=='General' && f.category!=='Annual leave'), clientLabel: f.category==='Annual leave'?'Type':(f.category==='General'?'Activity':'Client / work'),
+      showDivisionField: f.category==='Client Work', divisionOptions:this.DIVISIONS, f_division:f.division||'',
+      setDivision:(e)=>this.setForm({division:e.target.value}),
       setCat:(e)=>this.setForm({category:e.target.value}), setClient:(e)=>this.setForm({client:e.target.value}), setTask:(e)=>this.setForm({task:e.target.value}), setHours:(e)=>this.setForm({hours:e.target.value}), setDays:(e)=>this.setForm({days:e.target.value}), setNote:(e)=>this.setForm({note:e.target.value}), setDate:(e)=>this.setForm({date:e.target.value}), setFixedPrice:(e)=>this.setForm({fixedPrice:e.target.value}),
       isHoursMode: f.entryMode!=='day', isDayMode: f.entryMode==='day',
       setModeHours:()=>this.setForm({entryMode:'hours'}), setModeDay:()=>this.setForm({entryMode:'day'}),
