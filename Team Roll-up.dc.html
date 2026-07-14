@@ -368,6 +368,47 @@
       </sc-if>
       </sc-if>
 
+      <!-- BILLABLE EXPENSES -->
+      <sc-if value="{{ isExpensesReport }}" hint-placeholder-val="">
+      <div class="pbk" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#5b7178;text-transform:uppercase;">To rebill</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;line-height:1;color:#0e2b33;">{{ expRebillTotalStr }}</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#5b7178;text-transform:uppercase;">Absorbed (not rebilled)</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;line-height:1;color:#0e2b33;">{{ expNonRebillTotalStr }}</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#5b7178;text-transform:uppercase;">Total expenses</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;line-height:1;color:#0e2b33;">{{ expGrandTotalStr }}</span>
+        </div>
+      </div>
+
+      <div class="pbk" style="background:#fff;border:1px solid #e3e9ea;border-radius:14px;padding:22px;">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px;">Billable expenses — {{ periodLabel }}</div>
+        <sc-if value="{{ hasExpenses }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:0.8fr 1fr 1fr 1.8fr 0.7fr 0.6fr;gap:12px;padding:0 6px 11px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;">
+          <span>Date</span><span>Person</span><span>Client</span><span>Description</span><span style="text-align:right;">Amount</span><span style="text-align:right;">Rebill?</span>
+        </div>
+        <sc-for list="{{ expRows }}" as="x" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:0.8fr 1fr 1fr 1.8fr 0.7fr 0.6fr;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid #f3f6f6;">
+            <span style="font-size:13px;color:#5b7178;">{{ x.date }}</span>
+            <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+              <span style="width:8px;height:8px;border-radius:50%;background:{{ x.personColor }};flex:none;"></span>
+              <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ x.person }}</span>
+            </div>
+            <span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ x.client }}</span>
+            <span style="font-size:13px;color:#3d565d;">{{ x.desc }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ x.amountStr }}</span>
+            <span style="font-size:12.5px;text-align:right;font-weight:600;color:{{ x.rebill ? '#1c8baf' : '#8aa0a6' }};">{{ x.rebillStr }}</span>
+          </div>
+        </sc-for>
+        </sc-if>
+        <sc-if value="{{ noExpenses }}" hint-placeholder-val="">
+          <div style="padding:28px 6px;text-align:center;color:#8aa0a6;font-size:14px;">No expenses logged in this period.</div>
+        </sc-if>
+      </div>
       </sc-if>
 
     </div>
@@ -602,7 +643,7 @@ class Component extends DCLogic {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
   }
 
-  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr){
+  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, expRebillTotalStr, expNonRebillTotalStr, expGrandTotalStr){
     const rows=[];
     const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
@@ -613,6 +654,18 @@ class Component extends DCLogic {
       clientPivotRows.forEach(c=>{ rows.push([c.name, c.transportH, c.transportR, c.hsH, c.hsR, c.hrH, c.hrR, c.totalH, c.totalR]); });
       rows.push(['Total','','','','','','', clientPivotTotals.totalH, clientPivotTotals.totalR]);
       this.downloadCsv(`team-client-report-${stamp}.csv`, rows);
+      return;
+    }
+
+    if(report==='expenses'){
+      rows.push(['Billable expenses \u2014 '+periodLabel]);
+      rows.push(['To rebill', expRebillTotalStr]);
+      rows.push(['Absorbed (not rebilled)', expNonRebillTotalStr]);
+      rows.push(['Total expenses', expGrandTotalStr]);
+      rows.push([]);
+      rows.push(['Date','Person','Client','Description','Amount','Rebill?']);
+      expRows.forEach(x=>{ rows.push([x.date, x.person, x.client, x.desc, x.amountStr, x.rebillStr]); });
+      this.downloadCsv(`team-billable-expenses-${stamp}.csv`, rows);
       return;
     }
 
@@ -659,7 +712,7 @@ class Component extends DCLogic {
   }
 
   aggPerson(person, keys){
-    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={};
+    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={}; const expenses=[];
     this.DIVISIONS.forEach(dv=>{ byDivision[dv]={hours:0,rev:0}; });
     const otm=person.overtimeByMonth||{};
     keys.forEach(k=>{ if(otm[k]) ot+=otm[k].monthlyOT||0; });
@@ -680,9 +733,10 @@ class Component extends DCLogic {
           if(e.division && byClientDiv[cn][e.division]){ byClientDiv[cn][e.division].h+=e.hours; byClientDiv[cn][e.division].r+=r; }
         }
         if(e.task){ if(!byTask[e.task]) byTask[e.task]={hours:0}; byTask[e.task].hours+=e.hours; }
+        if(e.expense){ expenses.push({date:e.date, client:cn, desc:e.expense.desc||'', amount:e.expense.amount||0, rebill:!!e.expense.rebill}); }
       });
     });
-    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask};
+    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask,expenses};
   }
 
   deriveName(fileName){
@@ -744,10 +798,12 @@ class Component extends DCLogic {
     const teamClients={};
     const teamClientDiv={};
     const teamDivisions={}; this.DIVISIONS.forEach(dv=>{ teamDivisions[dv]={hours:0,rev:0}; });
+    const allExpenses=[];
     const personAggs=[];
     const personRows=people.map(p=>{
       const a=this.aggPerson(p, keys);
       personAggs.push({p,a});
+      (a.expenses||[]).forEach(x=>{ allExpenses.push({...x, person:p.name, personColor:p.color}); });
       const leaveDays=a.leave/this.HPD;
       const effWD=Math.max(rawWD-leaveDays,0);
       const sd=p.standardDayHours||9;
@@ -845,10 +901,23 @@ class Component extends DCLogic {
     const otPeopleCount=otPersonRows.length;
     const otTotalStr=this.fh(T.ot||0)+'h';
 
+    const fdateShort=(iso)=>{ try{ return new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return iso; } };
+    const expRows=allExpenses.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0)).map(x=>({
+      date:fdateShort(x.date), person:x.person, personColor:x.personColor, client:x.client, desc:x.desc||'\u2014',
+      amountStr:x.amount>0?this.fm(x.amount):'\u2014 (unknown)', rebill:x.rebill, rebillStr:x.rebill?'Yes':'No',
+    }));
+    const rebillable=allExpenses.filter(x=>x.rebill);
+    const nonRebillable=allExpenses.filter(x=>!x.rebill);
+    const expRebillTotal=rebillable.reduce((s,x)=>s+x.amount,0);
+    const expNonRebillTotal=nonRebillable.reduce((s,x)=>s+x.amount,0);
+    const expGrandTotal=expRebillTotal+expNonRebillTotal;
+    const hasExpenses=expRows.length>0;
+
     const reportOptions=[
       {value:'totals', label:'Team totals'},
       {value:'clients', label:'Client report (full)'},
       {value:'overtime', label:'Overtime report'},
+      {value:'expenses', label:'Billable expenses'},
     ];
 
     const scopeOptions=[
@@ -866,7 +935,8 @@ class Component extends DCLogic {
     return {
       divTimeBg, divRevBg, divTimeLegend, divRevLegend, hasDivData,
       report:this.state.report, reportOptions, setReport:(e)=>this.setState({report:e.target.value}),
-      isTotals:this.state.report==='totals', isClientReport:this.state.report==='clients', isOvertimeReport:this.state.report==='overtime',
+      isTotals:this.state.report==='totals', isClientReport:this.state.report==='clients', isOvertimeReport:this.state.report==='overtime', isExpensesReport:this.state.report==='expenses',
+      expRows, hasExpenses, noExpenses:!hasExpenses, expRebillTotalStr:this.fm(expRebillTotal), expNonRebillTotalStr:this.fm(expNonRebillTotal), expGrandTotalStr:this.fm(expGrandTotal),
       clientPivotRows, clientPivotTotals, hasClientPivot,
       otPersonRows, hasOvertime, noOvertime:!hasOvertime, otPeopleCount, otTotalStr,
       hasPeople:people.length>0, noPeople:people.length===0, peopleCount:people.length,
@@ -888,7 +958,7 @@ class Component extends DCLogic {
       dropBg:this.state.dragActive?'rgba(28,139,175,0.06)':'#fafcfc',
       setScope:(e)=>this.setState({scope:e.target.value}),
       exportPrint:()=>window.print(),
-      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr),
+      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, expRebillTotalStr, expNonRebillTotalStr, expGrandTotalStr),
       clearAll:()=>this.clearAll(),
     };
   }
