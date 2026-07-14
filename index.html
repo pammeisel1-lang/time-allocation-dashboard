@@ -7,44 +7,104 @@
 <meta name="robots" content="noindex, nofollow">
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; background: #f5f6f8; margin: 0; padding: 60px 24px; color: #1a1a1a; }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 { font-size: 28px; margin: 0 0 8px; }
-  p.sub { color: #666; margin: 0 0 40px; }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 8px; }
+  p.sub { color: #666; margin: 0 0 32px; }
   h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: #888; margin: 32px 0 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #444; margin: 16px 0 6px; }
+  input[type="text"] { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 8px; border: 1px solid #d8d8de; font-size: 15px; font-family: inherit; }
+  .seg { display: flex; gap: 8px; margin-top: 4px; }
+  .seg label.opt { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #d8d8de; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 500; cursor: pointer; margin: 0; color: #333; }
+  .seg input { accent-color: #1c8baf; }
+  .seg label.opt:has(input:checked) { border-color: #1c8baf; background: #eef7fa; color: #0e2b33; }
+  button.go { width: 100%; margin-top: 26px; padding: 13px; border: none; border-radius: 8px; background: #1c8baf; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button.go:hover { background: #16748f; }
   a.card { display: block; background: #fff; border: 1px solid #e2e2e6; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; text-decoration: none; color: #1a1a1a; transition: border-color 0.15s, box-shadow 0.15s; }
   a.card:hover { border-color: #999; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   a.card .title { font-weight: 600; font-size: 16px; }
   a.card .desc { font-size: 13px; color: #777; margin-top: 4px; }
+  .welcome-back { font-size: 13px; color: #777; margin-top: -8px; margin-bottom: 20px; }
+  .welcome-back a { color: #1c8baf; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Time Allocation Dashboard</h1>
-    <p class="sub">Flagship Partners</p>
 
-    <h2>Master Dashboards</h2>
-    <a class="card" href="Time%20Allocation%20Dashboard.dc.html">
-      <div class="title">Time Allocation Dashboard (9h day)</div>
-      <div class="desc">Standard dashboard</div>
-    </a>
-    <a class="card" href="Time%20Allocation%20Dashboard%20(6hr%20day).dc.html">
-      <div class="title">Time Allocation Dashboard (6h day)</div>
-      <div class="desc">Reduced-hours dashboard</div>
-    </a>
-    <a class="card" href="Team%20Roll-up.dc.html">
-      <div class="title">Team Roll-up</div>
-      <div class="desc">Import team backups, consolidated reporting</div>
-    </a>
+    <!-- FIRST-TIME SETUP -->
+    <div id="setup">
+      <h1>Time Allocation Dashboard</h1>
+      <p class="sub">Flagship Partners — let's set up your dashboard</p>
+      <form id="setupForm">
+        <label for="pname">Your name</label>
+        <input type="text" id="pname" placeholder="e.g. Jane Smith" required>
 
-    <h2>For Colleagues — Send This</h2>
-    <a class="card" href="SEND%20THIS%20-%20Time%20Allocation.html">
-      <div class="title">SEND THIS — Time Allocation (9h day)</div>
-      <div class="desc">Standalone file for team members to log hours and export a backup</div>
-    </a>
-    <a class="card" href="SEND%20THIS%20-%20Time%20Allocation%20(6hr%20day).html">
-      <div class="title">SEND THIS — Time Allocation (6h day)</div>
-      <div class="desc">Standalone file for team members on the 6-hour schedule</div>
-    </a>
+        <label for="prole">Job title</label>
+        <input type="text" id="prole" placeholder="e.g. HR Advisor" required>
+
+        <label>Working day</label>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="daylen" value="9" checked> 9 hour day</label>
+          <label class="opt"><input type="radio" name="daylen" value="6"> 6 hour day</label>
+        </div>
+
+        <button type="submit" class="go">Go to my dashboard</button>
+      </form>
+    </div>
+
+    <!-- RETURNING USER -->
+    <div id="returning" style="display:none;">
+      <h1>Welcome back<span id="backName"></span></h1>
+      <p class="welcome-back">Not you? <a href="#" id="resetLink">Set up as someone else</a></p>
+      <a class="card" id="myDashLink">
+        <div class="title" id="myDashTitle">My dashboard</div>
+        <div class="desc">Continue logging your time</div>
+      </a>
+      <h2>Other</h2>
+      <a class="card" href="Team%20Roll-up.dc.html">
+        <div class="title">Team Roll-up</div>
+        <div class="desc">Consolidated reporting across the team</div>
+      </a>
+    </div>
+
   </div>
+
+<script>
+(function(){
+  var PROFILE_KEY = 'fp-time-alloc-profile-v1';
+  var raw = null;
+  try { raw = localStorage.getItem(PROFILE_KEY); } catch(e){}
+  var profile = null;
+  try { profile = raw ? JSON.parse(raw) : null; } catch(e){}
+
+  var FILE_9H = 'Time%20Allocation%20Dashboard.dc.html';
+  var FILE_6H = 'Time%20Allocation%20Dashboard%20(6hr%20day).dc.html';
+
+  function fileFor(day){ return day === '6' ? FILE_6H : FILE_9H; }
+
+  if (profile && profile.name && profile.dayLength) {
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('returning').style.display = 'block';
+    document.getElementById('backName').textContent = ', ' + profile.name;
+    var f = fileFor(profile.dayLength);
+    document.getElementById('myDashLink').href = f;
+    document.getElementById('myDashTitle').textContent = 'My dashboard (' + profile.dayLength + 'h day)';
+    document.getElementById('resetLink').addEventListener('click', function(ev){
+      ev.preventDefault();
+      try { localStorage.removeItem(PROFILE_KEY); } catch(e){}
+      location.reload();
+    });
+  } else {
+    document.getElementById('setupForm').addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var name = document.getElementById('pname').value.trim();
+      var role = document.getElementById('prole').value.trim();
+      var day = document.querySelector('input[name="daylen"]:checked').value;
+      if (!name || !role) return;
+      try { localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: name, role: role, dayLength: day })); } catch(e){}
+      location.href = fileFor(day);
+    });
+  }
+})();
+</script>
 </body>
 </html>

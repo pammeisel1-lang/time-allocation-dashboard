@@ -755,8 +755,8 @@ class Component extends DCLogic {
       newClientCat:'Client Work',
       form:{ category:'Client Work', client:'Pro-Mile', task:'Advisory call', hours:'', entryMode:'hours', days:'1', billable:true, date:todayIso, note:'', allied:false, fixedPrice:'', division:'' },
       editingProfile:false,
-      profileName:(profile && profile.name) || (this.props && this.props.userName) || 'Pam Meisel',
-      profileRole:(profile && profile.role) || (this.props && this.props.userRole) || 'Transport & compliance',
+      profileName:(profile && profile.name) || (this.props && this.props.userName) || '',
+      profileRole:(profile && profile.role) || (this.props && this.props.userRole) || '',
     };
   }
 
