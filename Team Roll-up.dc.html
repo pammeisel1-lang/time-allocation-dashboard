@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -94,7 +95,11 @@
           <button onClick="{{ syncFromCloud }}" style="display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:11px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-size:14.5px;font-weight:600;cursor:pointer;">
             {{ cloudSyncLabel }}
           </button>
+          <button onClick="{{ backupAllCloud }}" style="display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:11px;border:1px solid #cdd9db;background:#fff;color:#5b7178;font-size:14.5px;font-weight:600;cursor:pointer;">
+            Download cloud backup
+          </button>
           <sc-if value="{{ cloudMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudMsg }}</span></sc-if>
+          <sc-if value="{{ cloudBackupMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudBackupMsg }}</span></sc-if>
         </div>
       </div>
       </sc-if>
@@ -120,7 +125,9 @@
           <input type="file" accept="application/json,.json" multiple onChange="{{ onFiles }}" style="display:none;">
         </label>
         <button onClick="{{ syncFromCloud }}" class="no-print" style="height:38px;padding:0 15px;border-radius:9px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-size:13.5px;font-weight:600;cursor:pointer;">{{ cloudSyncLabel }}</button>
+        <button onClick="{{ backupAllCloud }}" class="no-print" style="height:38px;padding:0 15px;border-radius:9px;border:1px solid #cdd9db;background:#fff;color:#5b7178;font-size:13px;font-weight:600;cursor:pointer;">Download cloud backup</button>
         <sc-if value="{{ cloudMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudMsg }}</span></sc-if>
+        <sc-if value="{{ cloudBackupMsg }}" hint-placeholder-val=""><span style="font-size:12.5px;font-weight:600;color:#5b7178;">{{ cloudBackupMsg }}</span></sc-if>
         <button onClick="{{ clearAll }}" class="no-print" style="height:38px;padding:0 14px;border-radius:9px;border:1px solid #f6d6dd;background:#fff;color:#f05376;font-size:13px;font-weight:600;cursor:pointer;">Clear all</button>
       </div>
 
@@ -291,6 +298,27 @@ class Component extends DCLogic {
   }
 
   nameFromSlug(slug){ return (slug||'unknown').split('-').filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')||'Unnamed'; }
+
+  backupAllCloud(){
+    this.setState({cloudBackupMsg:'Backing up\u2026'});
+    const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state?select=*`;
+    fetch(url,{headers:{...this.cloudHeaders(),'Accept':'application/json'}})
+      .then(r=>r.ok?r.json():[])
+      .then(rows=>{
+        if(!rows || !rows.length){ this.setState({cloudBackupMsg:'No cloud data to back up'}); setTimeout(()=>{ if(this.state.cloudBackupMsg) this.setState({cloudBackupMsg:null}); },3000); return; }
+        const payload={v:1, app:'flagship-time-allocation-cloud-backup', exportedAt:new Date().toISOString(), rows};
+        const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+        const url2=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        a.href=url2; a.download=`flagship-cloud-backup-${stamp}.json`;
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url2); },100);
+        this.setState({cloudBackupMsg:`Backed up ${rows.length} record(s) \u2713`});
+        setTimeout(()=>{ if(this.state.cloudBackupMsg) this.setState({cloudBackupMsg:null}); },4000);
+      })
+      .catch(()=>{ this.setState({cloudBackupMsg:'Could not reach cloud'}); setTimeout(()=>{ if(this.state.cloudBackupMsg) this.setState({cloudBackupMsg:null}); },4000); });
+  }
 
   syncFromCloud(){
     this.setState({cloudSyncing:true, cloudMsg:null});
@@ -540,6 +568,8 @@ class Component extends DCLogic {
       syncFromCloud:()=>this.syncFromCloud(),
       cloudSyncLabel:this.state.cloudSyncing?'Syncing\u2026':'Sync from cloud',
       cloudMsg:this.state.cloudMsg||null,
+      backupAllCloud:()=>this.backupAllCloud(),
+      cloudBackupMsg:this.state.cloudBackupMsg||null,
       onDrop:(e)=>{ e.preventDefault(); this.setState({dragActive:false}); if(e.dataTransfer&&e.dataTransfer.files) this.ingest(e.dataTransfer.files); },
       onDragOver:(e)=>{ e.preventDefault(); if(!this.state.dragActive) this.setState({dragActive:true}); },
       onDragLeave:(e)=>{ e.preventDefault(); this.setState({dragActive:false}); },
