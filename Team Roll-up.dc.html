@@ -273,16 +273,17 @@
         <sc-if value="{{ hasClientPivot }}" hint-placeholder-val="{{ true }}">
         <!-- keep-columns -->
         <div style="overflow-x:auto;">
-        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;padding:0 6px 11px;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;min-width:1000px;">
+        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;padding:0 6px 11px;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#8aa0a6;font-weight:600;border-bottom:1px solid #eef2f3;min-width:1000px;">
           <span>Client / work</span>
           <span style="text-align:right;color:#1c8baf;">Transport h</span><span style="text-align:right;color:#1c8baf;">Transport £</span>
           <span style="text-align:right;color:#e8974d;">H&amp;S h</span><span style="text-align:right;color:#e8974d;">H&amp;S £</span>
           <span style="text-align:right;color:#8b6fc9;">HR h</span><span style="text-align:right;color:#8b6fc9;">HR £</span>
+          <span style="text-align:right;color:#49bd99;">Training h</span><span style="text-align:right;color:#49bd99;">Training £</span>
           <span style="text-align:right;color:#a3b2b6;">No division h</span><span style="text-align:right;color:#a3b2b6;">No division £</span>
           <span style="text-align:right;">Total h</span><span style="text-align:right;">Total £</span>
         </div>
         <sc-for list="{{ clientPivotRows }}" as="c" hint-placeholder-count="8">
-          <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:11px 6px;border-bottom:1px solid #f3f6f6;min-width:1000px;">
+          <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:11px 6px;border-bottom:1px solid #f3f6f6;min-width:1000px;">
             <span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.name }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.transportH }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.transportR }}</span>
@@ -290,13 +291,15 @@
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.hsR }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.hrH }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.hrR }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;">{{ c.trainingH }}</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:#5b7178;font-variant-numeric:tabular-nums;">{{ c.trainingR }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:{{ c.hasNone ? '#c98a00' : '#c7d1d3' }};font-variant-numeric:tabular-nums;">{{ c.noneH }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;text-align:right;color:{{ c.hasNone ? '#c98a00' : '#c7d1d3' }};font-variant-numeric:tabular-nums;">{{ c.noneR }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ c.totalH }}</span>
             <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;">{{ c.totalR }}</span>
           </div>
         </sc-for>
-        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:13px 6px 2px;border-top:2px solid #d6dfe1;margin-top:4px;min-width:1000px;">
+        <div style="display:grid;grid-template-columns:1.5fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.85fr 0.95fr 0.9fr 1fr;gap:9px;align-items:center;padding:13px 6px 2px;border-top:2px solid #d6dfe1;margin-top:4px;min-width:1000px;">
           <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Total</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.transportH }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.transportR }}</span>
@@ -304,6 +307,8 @@
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hsR }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hrH }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.hrR }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.trainingH }}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.trainingR }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;color:#c98a00;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.noneH }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-align:right;color:#c98a00;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.noneR }}</span>
           <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;">{{ clientPivotTotals.totalH }}</span>
@@ -431,8 +436,8 @@ class Component extends DCLogic {
     this.HPD = 8;
     this.FY_START_MONTH = 6;
     this.LSKEY = 'fp-team-rollup-v1';
-    this.DIVISIONS = ['Transport','Health & Safety','HR'];
-    this.DIVCOLOR = {'Transport':'#1c8baf','Health & Safety':'#e8974d','HR':'#8b6fc9'};
+    this.DIVISIONS = ['Transport','Health & Safety','HR','Training'];
+    this.DIVCOLOR = {'Transport':'#1c8baf','Health & Safety':'#e8974d','HR':'#8b6fc9','Training':'#49bd99'};
     this.SUPABASE_URL = 'https://jesjtdkehyzteoqhycyq.supabase.co';
     this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Implc2p0ZGtlaHl6dGVvcWh5Y3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDAyMTcsImV4cCI6MjA5OTU3NjIxN30.SE_bWxKBHaQujC-7IuthAkVu1HeVw5sHX1SLkgnNxBk';
     this.PALETTE = ['#003a4a','#49bd99','#1c8baf','#f05376','#ffce6d','#5b4fc4','#1b9e77','#d95f02'];
@@ -659,9 +664,9 @@ class Component extends DCLogic {
     if(report==='clients'){
       rows.push(['Client report (full) \u2014 '+periodLabel]);
       rows.push([]);
-      rows.push(['Client / work','Transport h','Transport £','Health & Safety h','Health & Safety £','HR h','HR £','No division h','No division £','Total h','Total £']);
-      clientPivotRows.forEach(c=>{ rows.push([c.name, c.transportH, c.transportR, c.hsH, c.hsR, c.hrH, c.hrR, c.noneH, c.noneR, c.totalH, c.totalR]); });
-      rows.push(['Total','','','','','','','','', clientPivotTotals.totalH, clientPivotTotals.totalR]);
+      rows.push(['Client / work','Transport h','Transport £','Health & Safety h','Health & Safety £','HR h','HR £','Training h','Training £','No division h','No division £','Total h','Total £']);
+      clientPivotRows.forEach(c=>{ rows.push([c.name, c.transportH, c.transportR, c.hsH, c.hsR, c.hrH, c.hrR, c.trainingH, c.trainingR, c.noneH, c.noneR, c.totalH, c.totalR]); });
+      rows.push(['Total','','','','','','','','','','', clientPivotTotals.totalH, clientPivotTotals.totalR]);
       this.downloadCsv(`team-client-report-${stamp}.csv`, rows);
       return;
     }
@@ -738,7 +743,7 @@ class Component extends DCLogic {
         if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const bh=(e.billHours!=null?e.billHours:e.hours); r=(e.revenueOverride!=null?e.revenueOverride:bh*eff); bill+=bh; rev+=r; byClient[cn].rev+=r; }
         if(e.category==='Client Work' && e.division && byDivision[e.division]){ byDivision[e.division].hours+=e.hours; byDivision[e.division].rev+=r; }
         if(e.category==='Client Work'){
-          if(!byClientDiv[cn]) byClientDiv[cn]={category:e.category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, None:{h:0,r:0}, totalH:0, totalR:0};
+          if(!byClientDiv[cn]) byClientDiv[cn]={category:e.category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, Training:{h:0,r:0}, None:{h:0,r:0}, totalH:0, totalR:0};
           byClientDiv[cn].totalH+=e.hours; byClientDiv[cn].totalR+=r;
           if(e.division && byClientDiv[cn][e.division]){ byClientDiv[cn][e.division].h+=e.hours; byClientDiv[cn][e.division].r+=r; }
           else { byClientDiv[cn].None.h+=e.hours; byClientDiv[cn].None.r+=r; }
@@ -822,7 +827,7 @@ class Component extends DCLogic {
       T.total+=a.total; T.bill+=a.bill; T.rev+=a.rev; T.leave+=a.leave; T.nonbill+=a.nonbill; T.capH+=capH; T.ot=(T.ot||0)+a.ot;
       Object.keys(a.byClient).forEach(cn=>{ if(!teamClients[cn]) teamClients[cn]={hours:0,rev:0,category:a.byClient[cn].category}; teamClients[cn].hours+=a.byClient[cn].hours; teamClients[cn].rev+=a.byClient[cn].rev; });
       Object.keys(a.byClientDiv||{}).forEach(cn=>{
-        if(!teamClientDiv[cn]) teamClientDiv[cn]={category:a.byClientDiv[cn].category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, None:{h:0,r:0}, totalH:0, totalR:0};
+        if(!teamClientDiv[cn]) teamClientDiv[cn]={category:a.byClientDiv[cn].category, Transport:{h:0,r:0}, 'Health & Safety':{h:0,r:0}, HR:{h:0,r:0}, Training:{h:0,r:0}, None:{h:0,r:0}, totalH:0, totalR:0};
         const src=a.byClientDiv[cn];
         this.DIVISIONS.forEach(dv=>{ teamClientDiv[cn][dv].h+=src[dv].h; teamClientDiv[cn][dv].r+=src[dv].r; });
         teamClientDiv[cn].None.h+=src.None.h; teamClientDiv[cn].None.r+=src.None.r;
@@ -891,15 +896,17 @@ class Component extends DCLogic {
       transportH:fhOrDash(c.Transport.h), transportR:fmOrDash(c.Transport.r),
       hsH:fhOrDash(c['Health & Safety'].h), hsR:fmOrDash(c['Health & Safety'].r),
       hrH:fhOrDash(c.HR.h), hrR:fmOrDash(c.HR.r),
+      trainingH:fhOrDash(c.Training.h), trainingR:fmOrDash(c.Training.r),
       noneH:fhOrDash(c.None.h), noneR:fmOrDash(c.None.r), hasNone:c.None.h>0.001,
       totalH:this.fh(c.totalH)+'h', totalR:fmOrDash(c.totalR),
     }));
-    let pvT={Transport:{h:0,r:0},'Health & Safety':{h:0,r:0},HR:{h:0,r:0},None:{h:0,r:0},totalH:0,totalR:0};
+    let pvT={Transport:{h:0,r:0},'Health & Safety':{h:0,r:0},HR:{h:0,r:0},Training:{h:0,r:0},None:{h:0,r:0},totalH:0,totalR:0};
     pivotArr.forEach(c=>{ this.DIVISIONS.forEach(dv=>{ pvT[dv].h+=c[dv].h; pvT[dv].r+=c[dv].r; }); pvT.None.h+=c.None.h; pvT.None.r+=c.None.r; pvT.totalH+=c.totalH; pvT.totalR+=c.totalR; });
     const clientPivotTotals={
       transportH:fhOrDash(pvT.Transport.h), transportR:fmOrDash(pvT.Transport.r),
       hsH:fhOrDash(pvT['Health & Safety'].h), hsR:fmOrDash(pvT['Health & Safety'].r),
       hrH:fhOrDash(pvT.HR.h), hrR:fmOrDash(pvT.HR.r),
+      trainingH:fhOrDash(pvT.Training.h), trainingR:fmOrDash(pvT.Training.r),
       noneH:fhOrDash(pvT.None.h), noneR:fmOrDash(pvT.None.r),
       totalH:this.fh(pvT.totalH)+'h', totalR:fmOrDash(pvT.totalR),
     };
