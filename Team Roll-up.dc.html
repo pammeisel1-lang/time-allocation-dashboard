@@ -980,7 +980,7 @@ class Component extends DCLogic {
       dropBg:this.state.dragActive?'rgba(28,139,175,0.06)':'#fafcfc',
       setScope:(e)=>this.setState({scope:e.target.value}),
       exportPrint:()=>window.print(),
-      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, expRebillTotalStr, expNonRebillTotalStr, expGrandTotalStr),
+      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, this.fm(expRebillTotal), this.fm(expNonRebillTotal), this.fm(expGrandTotal)),
       clearAll:()=>this.clearAll(),
     };
   }
