@@ -109,13 +109,11 @@
             </select>
           </div>
         </sc-if>
-        <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
-          <button onClick="{{ exportExcel }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 17px;border-radius:10px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5v8.5M4.8 7l3.2 3 3.2-3"></path><path d="M2.5 13.5h11"></path></svg>
-            Export to Excel
-          </button>
-        </sc-if>
-        <button onClick="{{ exportReport }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 17px;border-radius:10px;border:none;background:#003a4a;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">
+        <button onClick="{{ exportExcel }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 17px;border-radius:10px;border:1px solid #003a4a;background:#fff;color:#003a4a;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5v8.5M4.8 7l3.2 3 3.2-3"></path><path d="M2.5 13.5h11"></path></svg>
+          Export to Excel
+        </button>
+        <button onClick="{{ exportReport }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 17px;border-radius:10px;border:none;background:#003a4a;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5v8.5M4.8 7l3.2 3 3.2-3"></path><path d="M2.5 13.5h11"></path></svg>
           Export report (PDF)
         </button>
@@ -1079,7 +1077,7 @@ class Component extends DCLogic {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
   }
 
-  exportReportsExcel(scope, fy, reportRows, reportTotals, hasMatrix, matrixMonths, matrixRows, matrixTotals){
+  exportReportsExcel(scope, fy, reportRows, reportTotals, hasMatrix, matrixMonths, matrixRows, matrixTotals, listMonths){
     const rows=[];
     rows.push([scope==='fy' ? ('Financial year '+fy.label) : 'Monthly report']);
     rows.push([]);
@@ -1092,6 +1090,17 @@ class Component extends DCLogic {
       rows.push(['Client'].concat(matrixMonths.map(m=>m.label)).concat(['Total','Revenue']));
       matrixRows.forEach(r=>{ rows.push([r.name].concat(r.cells.map(c=>c.hStr)).concat([r.totalStr, r.revStr])); });
       rows.push(['Team total'].concat(matrixTotals.cells.map(c=>c.hStr)).concat([matrixTotals.totalStr, matrixTotals.revStr]));
+    }
+    if(listMonths && listMonths.length){
+      rows.push([]);
+      rows.push(['Entry detail']);
+      rows.push(['Date','Client','Division','Category','Task','Hours','Billable','Revenue','Note','Expense amount','Expense description','Rebill?']);
+      listMonths.slice().sort((a,b)=> a.key<b.key?-1:1).forEach(m=>{
+        m.entries.slice().sort((a,b)=> a.date<b.date?-1:(a.date>b.date?1:a.id-b.id)).forEach(e=>{
+          const rev = e.billable ? (e.revenueOverride!=null?e.revenueOverride:(e.billHours!=null?e.billHours:e.hours)*(e.allied?e.rate*0.8:e.rate)) : 0;
+          rows.push([this.fdate(e.date), e.client, e.division||'', e.category, e.task||'', e.hours, e.billable?'Yes':'No', rev>0?this.fm(rev):'', e.note||'', e.expense?(e.expense.amount||''):'', e.expense?(e.expense.desc||''):'', e.expense?(e.expense.rebill?'Yes':'No'):'']);
+        });
+      });
     }
     const owner=(this.state.profileName||'time').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'time';
     const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1353,7 +1362,7 @@ class Component extends DCLogic {
       navDashStyle:view==='dashboard'?navOn:navBase, navLogStyle:view==='log'?navOn:navBase, navReportsStyle:view==='reports'?navOn:navBase,
       goDashboard:()=>this.setState({view:'dashboard'}), goLog:()=>this.setState({view:'log'}), goReports:()=>this.setState({view:'reports'}),
       onMonthChange:(e)=>this.setState({monthKey:e.target.value}), exportReport:()=>window.print(),
-      exportExcel:()=>this.exportReportsExcel(scope, fy, reportRows, reportTotals, hasMatrix, matrixMonths, matrixRows, matrixTotals),
+      exportExcel:()=>this.exportReportsExcel(scope, fy, reportRows, reportTotals, hasMatrix, matrixMonths, matrixRows, matrixTotals, listMonths),
       kpis, utilStr:Math.round(util)+'%', donutBg, billableH:this.fh(aCur.billable), nonbillH:this.fh(aCur.nonBillable),
       trend, clients, cats, tasks, recent,
       divTimeBg, divRevBg, divTimeLegend, divRevLegend, hasDivData,

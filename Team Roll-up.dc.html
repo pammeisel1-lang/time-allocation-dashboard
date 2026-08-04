@@ -657,7 +657,7 @@ class Component extends DCLogic {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
   }
 
-  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, expRebillTotalStr, expNonRebillTotalStr, expGrandTotalStr){
+  exportRollupExcel(report, periodLabel, personRows, personTotals, hasClients, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, expRebillTotalStr, expNonRebillTotalStr, expGrandTotalStr, allEntries){
     const rows=[];
     const d=new Date(); const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
@@ -677,8 +677,8 @@ class Component extends DCLogic {
       rows.push(['Absorbed (not rebilled)', expNonRebillTotalStr]);
       rows.push(['Total expenses', expGrandTotalStr]);
       rows.push([]);
-      rows.push(['Date','Person','Client','Description','Amount','Rebill?']);
-      expRows.forEach(x=>{ rows.push([x.date, x.person, x.client, x.desc, x.amountStr, x.rebillStr]); });
+      rows.push(['Date','Person','Client','Description','Amount','Rebill?','Note']);
+      expRows.forEach(x=>{ rows.push([x.date, x.person, x.client, x.desc, x.amountStr, x.rebillStr, x.note||'']); });
       this.downloadCsv(`team-billable-expenses-${stamp}.csv`, rows);
       return;
     }
@@ -712,6 +712,14 @@ class Component extends DCLogic {
       clientRows.forEach(c=>{ rows.push([c.name, c.hours, c.revenue]); });
       rows.push(['Total', clientTotals.hours, clientTotals.revenue]);
     }
+    if(allEntries && allEntries.length){
+      rows.push([]);
+      rows.push(['Entry detail']);
+      rows.push(['Date','Person','Client','Division','Category','Task','Hours','Billable','Revenue','Note']);
+      allEntries.slice().sort((a,b)=> a.date<b.date?-1:(a.date>b.date?1:0)).forEach(e=>{
+        rows.push([e.date, e.person, e.client, e.division, e.category, e.task, e.hours, e.billable?'Yes':'No', e.revenue>0?this.fm(e.revenue):'', e.note]);
+      });
+    }
     this.downloadCsv(`team-rollup-${stamp}.csv`, rows);
   }
 
@@ -727,7 +735,7 @@ class Component extends DCLogic {
   }
 
   aggPerson(person, keys){
-    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={}; const expenses=[];
+    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={}; const expenses=[]; const entries=[];
     this.DIVISIONS.forEach(dv=>{ byDivision[dv]={hours:0,rev:0}; });
     const otm=person.overtimeByMonth||{};
     keys.forEach(k=>{ if(otm[k]) ot+=otm[k].monthlyOT||0; });
@@ -749,10 +757,11 @@ class Component extends DCLogic {
           else { byClientDiv[cn].None.h+=e.hours; byClientDiv[cn].None.r+=r; }
         }
         if(e.task){ if(!byTask[e.task]) byTask[e.task]={hours:0}; byTask[e.task].hours+=e.hours; }
-        if(e.expense){ expenses.push({date:e.date, client:cn, desc:e.expense.desc||'', amount:e.expense.amount||0, rebill:!!e.expense.rebill}); }
+        if(e.expense){ expenses.push({date:e.date, client:cn, desc:e.expense.desc||'', amount:e.expense.amount||0, rebill:!!e.expense.rebill, note:e.note||''}); }
+        entries.push({date:e.date, client:cn, division:e.division||'', category:e.category, task:e.task||'', hours:e.hours, billable:e.billable, revenue:r, note:e.note||''});
       });
     });
-    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask,expenses};
+    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask,expenses,entries};
   }
 
   deriveName(fileName){
@@ -815,11 +824,13 @@ class Component extends DCLogic {
     const teamClientDiv={};
     const teamDivisions={}; this.DIVISIONS.forEach(dv=>{ teamDivisions[dv]={hours:0,rev:0}; });
     const allExpenses=[];
+    const allEntries=[];
     const personAggs=[];
     const personRows=people.map(p=>{
       const a=this.aggPerson(p, keys);
       personAggs.push({p,a});
       (a.expenses||[]).forEach(x=>{ allExpenses.push({...x, person:p.name, personColor:p.color}); });
+      (a.entries||[]).forEach(x=>{ allEntries.push({...x, person:p.name}); });
       const leaveDays=a.leave/this.HPD;
       const effWD=Math.max(rawWD-leaveDays,0);
       const sd=p.standardDayHours||9;
@@ -926,7 +937,7 @@ class Component extends DCLogic {
     const fdateShort=(iso)=>{ try{ return new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return iso; } };
     const expRows=allExpenses.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0)).map(x=>({
       date:fdateShort(x.date), person:x.person, personColor:x.personColor, client:x.client, desc:x.desc||'\u2014',
-      amountStr:x.amount>0?this.fm(x.amount):'\u2014 (unknown)', rebill:x.rebill, rebillStr:x.rebill?'Yes':'No',
+      amountStr:x.amount>0?this.fm(x.amount):'\u2014 (unknown)', rebill:x.rebill, rebillStr:x.rebill?'Yes':'No', note:x.note||'',
     }));
     const rebillable=allExpenses.filter(x=>x.rebill);
     const nonRebillable=allExpenses.filter(x=>!x.rebill);
@@ -980,7 +991,7 @@ class Component extends DCLogic {
       dropBg:this.state.dragActive?'rgba(28,139,175,0.06)':'#fafcfc',
       setScope:(e)=>this.setState({scope:e.target.value}),
       exportPrint:()=>window.print(),
-      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, this.fm(expRebillTotal), this.fm(expNonRebillTotal), this.fm(expGrandTotal)),
+      exportExcel:()=>this.exportRollupExcel(this.state.report, periodLabel, personRows, personTotals, clientRows.length>0, clientRows, clientTotals, clientPivotRows, clientPivotTotals, otPersonRows, otTotalStr, expRows, this.fm(expRebillTotal), this.fm(expNonRebillTotal), this.fm(expGrandTotal), allEntries),
       clearAll:()=>this.clearAll(),
     };
   }
