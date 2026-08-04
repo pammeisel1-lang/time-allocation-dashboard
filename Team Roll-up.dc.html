@@ -677,8 +677,8 @@ class Component extends DCLogic {
       rows.push(['Absorbed (not rebilled)', expNonRebillTotalStr]);
       rows.push(['Total expenses', expGrandTotalStr]);
       rows.push([]);
-      rows.push(['Date','Person','Client','Description','Amount','Rebill?','Note']);
-      expRows.forEach(x=>{ rows.push([x.date, x.person, x.client, x.desc, x.amountStr, x.rebillStr, x.note||'']); });
+      rows.push(['Date','Person','Client','Description','Amount','Rebill?']);
+      expRows.forEach(x=>{ rows.push([x.date, x.person, x.client, x.desc, x.amountStr, x.rebillStr]); });
       this.downloadCsv(`team-billable-expenses-${stamp}.csv`, rows);
       return;
     }
@@ -715,9 +715,9 @@ class Component extends DCLogic {
     if(allEntries && allEntries.length){
       rows.push([]);
       rows.push(['Entry detail']);
-      rows.push(['Date','Person','Client','Division','Category','Task','Hours','Billable','Revenue','Note']);
+      rows.push(['Date','Person','Client','Division','Category','Task','Hours','Billable','Revenue']);
       allEntries.slice().sort((a,b)=> a.date<b.date?-1:(a.date>b.date?1:0)).forEach(e=>{
-        rows.push([e.date, e.person, e.client, e.division, e.category, e.task, e.hours, e.billable?'Yes':'No', e.revenue>0?this.fm(e.revenue):'', e.note]);
+        rows.push([e.date, e.person, e.client, e.division, e.category, e.task, e.hours, e.billable?'Yes':'No', e.revenue>0?this.fm(e.revenue):'']);
       });
     }
     this.downloadCsv(`team-rollup-${stamp}.csv`, rows);
