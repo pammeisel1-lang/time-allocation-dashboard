@@ -591,6 +591,26 @@ class Component extends DCLogic {
       .then(rows=>{
         if(!rows || !rows.length){ this.setState({cloudSyncing:false, cloudMsg:'No cloud data found yet — team members need to log at least one entry.'}); return; }
         const people=this.state.people.slice();
+        // A person can have rows under both dashboard types (e.g. they opened the other
+        // dashboard once). Keep only the richest row per person so a near-empty row can't
+        // overwrite real data — and can't drag the wrong standard-day capacity in with it.
+        const weight=(row)=>{
+          const months=(row.data && row.data.months) || [];
+          let entries=0, hours=0;
+          months.forEach(m=>(m.entries||[]).forEach(e=>{ entries++; hours+=(e.hours||0); }));
+          return {entries, hours, updated:new Date(row.updated_at||0).getTime()};
+        };
+        const bySlug={};
+        rows.forEach(row=>{
+          const key=this.nameFromSlug(row.person_slug).toLowerCase();
+          const w=weight(row);
+          const cur=bySlug[key];
+          if(!cur || w.entries>cur.w.entries || (w.entries===cur.w.entries && w.hours>cur.w.hours)
+             || (w.entries===cur.w.entries && w.hours===cur.w.hours && w.updated>cur.w.updated)){
+            bySlug[key]={row, w};
+          }
+        });
+        rows=Object.keys(bySlug).map(k=>bySlug[k].row);
         rows.forEach(row=>{
           const SD = row.dashboard_type==='6h' ? 6 : 9;
           const HPD = row.dashboard_type==='6h' ? 6 : 8;
@@ -730,8 +750,16 @@ class Component extends DCLogic {
       'SCUK': 'Supacolour',
       'BSH': 'Bourne Skip Hire',
       'BSH Recycling': 'Bourne Skip Hire',
+      'Swift Fire and Safety': 'Swift Fire & Safety',
+      'Swift Fire & Safety': 'Swift Fire & Safety',
+      'Swift Fire and Safety Ltd': 'Swift Fire & Safety',
+      'Swift Fire & Safety Ltd': 'Swift Fire & Safety',
+      'Swift Fire': 'Swift Fire & Safety',
     };
-    return ALIASES[name] || name;
+    if(ALIASES[name]) return ALIASES[name];
+    const n=String(name||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/\band\b/g,'&').replace(/\s*&\s*/g,'&').replace(/\bltd\b\.?/g,'').trim();
+    if(n==='swift fire&safety'||n==='swift fire&safety') return 'Swift Fire & Safety';
+    return name;
   }
 
   aggPerson(person, keys){
