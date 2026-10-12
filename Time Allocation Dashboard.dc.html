@@ -726,14 +726,15 @@ class Component extends DCLogic {
       {name:'Admin', category:'General', rate:0},
       {name:'Prospecting', category:'General', rate:0},
       {name:'Annual leave', category:'Annual leave', rate:0},
+      {name:'Time off in lieu', category:'Time off in lieu', rate:0},
     ];
     this.workMap = {};
     this.WORK.forEach(w=>{ this.workMap[w.name]=w; });
-    this.CATS = ['Client Work','Digital Support','Project Work','General','Annual leave'];
+    this.CATS = ['Client Work','Digital Support','Project Work','General','Annual leave','Time off in lieu'];
     this.DASH_CATS = ['Client Work','Digital Support','Project Work','General'];
     this.DIVISIONS = ['Transport','Health & Safety','HR','Training'];
     this.DIVCOLOR = {'Transport':'#1c8baf','Health & Safety':'#e8974d','HR':'#8b6fc9','Training':'#49bd99'};
-    this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3'};
+    this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3','Time off in lieu':'#a58fb8'};
     this.HOURS_PER_DAY = 8; // rate & capacity basis (day rate is calculated on an 8h day)
     this.STANDARD_DAY_HOURS = 9; // actual working day \u2014 anything beyond this (per week/month) counts as overtime
     this.BANK_HOLIDAYS = new Set([
@@ -805,7 +806,7 @@ class Component extends DCLogic {
         if(cloudSavedAt>localSavedAt && row.data && Array.isArray(row.data.months)){
           if(row.data.idc) this.idc.v=Math.max(this.idc.v, row.data.idc);
           this.save(row.data.months, row.data.work, cloudSavedAt);
-          this.setState({months:row.data.months, work:row.data.work||this.state.work, cloudStatus:'synced from cloud \u2713'});
+          this.setState({months:row.data.months, work:(()=>{ const w=(row.data.work||this.state.work).slice(); this.WORK.forEach(d=>{ if(!w.some(x=>x.name===d.name)) w.push({...d}); }); return w; })(), cloudStatus:'synced from cloud \u2713'});
         } else {
           this.queueCloudPush();
           this.setState({cloudStatus:'synced \u2713'});
@@ -834,6 +835,7 @@ class Component extends DCLogic {
     if(cat==='Digital Support') return ['Support ticket','Implementation','Training','Account review'];
     if(cat==='General') return ['Training course','CPD','Admin','Prospecting'];
     if(cat==='Annual leave') return ['Annual leave'];
+    if(cat==='Time off in lieu') return ['Time off in lieu'];
     return ['Content build','Review','Mentoring','Planning'];
   }
 
@@ -863,10 +865,11 @@ class Component extends DCLogic {
   }
 
   aggregate(m){
-    let total=0, billable=0, revenue=0, leaveHours=0;
+    let total=0, billable=0, revenue=0, leaveHours=0, toilHours=0;
     const byClient={}, byTask={}, byCat={}, perDay={};
     m.entries.forEach(e=>{
       if(e.category==='Annual leave'){ leaveHours+=e.hours; return; }
+      if(e.category==='Time off in lieu'){ toilHours+=e.hours; return; }
       total+=e.hours;
       const bh=e.billHours!=null?e.billHours:e.hours;
       if(!byClient[e.client]) byClient[e.client]={name:e.client,category:e.category,hours:0,billable:0,revenue:0};
@@ -877,7 +880,7 @@ class Component extends DCLogic {
       perDay[e.day].total+=e.hours;
       if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const rev=(e.revenueOverride!=null?e.revenueOverride:bh*eff); billable+=bh; revenue+=rev; byClient[e.client].billable+=bh; byClient[e.client].revenue+=rev; perDay[e.day].billable+=bh; }
     });
-    return {total, billable, nonBillable:total-billable, revenue, leaveHours, util: total>0?billable/total*100:0, byClient, byTask, byCat, perDay};
+    return {total, billable, nonBillable:total-billable, revenue, leaveHours, toilHours, offHours:leaveHours+toilHours*this.HOURS_PER_DAY/this.STANDARD_DAY_HOURS, util: total>0?billable/total*100:0, byClient, byTask, byCat, perDay};
   }
 
   buildTrend(m,agg){
@@ -919,12 +922,12 @@ class Component extends DCLogic {
     if(patch.category!==undefined){
       const first=work.find(w=>w.category===patch.category);
       form.client=first?first.name:'';
-      const noBill = patch.category==='Project Work' || patch.category==='General' || patch.category==='Annual leave';
+      const noBill = patch.category==='Project Work' || patch.category==='General' || (patch.category==='Annual leave'||patch.category==='Time off in lieu');
       form.billable = !noBill;
-      const single = patch.category==='General' || patch.category==='Annual leave';
+      const single = patch.category==='General' || (patch.category==='Annual leave'||patch.category==='Time off in lieu');
       form.task = single ? (first?first.name:'') : this.tasksFor(patch.category)[0];
     }
-    if(patch.client!==undefined && (form.category==='General'||form.category==='Annual leave')){ form.task=patch.client; }
+    if(patch.client!==undefined && (form.category==='General'||(form.category==='Annual leave'||form.category==='Time off in lieu'))){ form.task=patch.client; }
     this.setState({form});
   }
 
@@ -1044,11 +1047,12 @@ class Component extends DCLogic {
         weeks[wk].workDays++;
       }
     }
-    let workedTotal=0, leaveTotal=0;
+    let workedTotal=0, leaveTotal=0, toilTotal=0;
     m.entries.forEach(e=>{
       const wk=this.weekKeyFor(e.date);
       if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0};
       if(e.category==='Annual leave'){ weeks[wk].leave+=e.hours; leaveTotal+=e.hours; return; }
+      if(e.category==='Time off in lieu'){ const eq=e.hours*this.HOURS_PER_DAY/SD; weeks[wk].leave+=eq; leaveTotal+=eq; toilTotal+=e.hours; return; }
       weeks[wk].worked+=e.hours;
       workedTotal+=e.hours;
     });
@@ -1061,8 +1065,8 @@ class Component extends DCLogic {
     const cal=this.computeCal(m);
     const leaveDaysTotal=leaveTotal/this.HOURS_PER_DAY;
     const monthlyCap=Math.max((cal.workingDays-leaveDaysTotal)*SD, 0);
-    const monthlyOT=Math.max(workedTotal-monthlyCap, 0);
-    return {weeklyOT, monthlyOT};
+    const monthlyOT=Math.max(workedTotal-monthlyCap, 0)-toilTotal;
+    return {weeklyOT, monthlyOT, toil:toilTotal};
   }
 
   downloadCsv(filename, rows){
@@ -1158,6 +1162,7 @@ class Component extends DCLogic {
       days=Math.round(parseFloat(f.days)*4)/4;
       if(!(days>0)) return;
       if(f.category==='Annual leave'){ hrs=Math.round(days*this.HOURS_PER_DAY*4)/4; billHrs=hrs; }
+      else if(f.category==='Time off in lieu'){ hrs=Math.round(days*this.STANDARD_DAY_HOURS*4)/4; billHrs=hrs; }
       else { hrs=Math.round(days*this.STANDARD_DAY_HOURS*4)/4; billHrs=Math.round(days*this.HOURS_PER_DAY*4)/4; }
     } else {
       hrs=Math.round(parseFloat(f.hours)*4)/4;
@@ -1167,7 +1172,7 @@ class Component extends DCLogic {
     const w=this.findWork(f.client);
     const parts=f.date.split('-').map(Number);
     const y=parts[0], mo=parts[1], d=parts[2];
-    const billable=(f.category==='Project Work'||f.category==='Annual leave')?false:f.billable;
+    const billable=(f.category==='Project Work'||(f.category==='Annual leave'||f.category==='Time off in lieu'))?false:f.billable;
     const fp=parseFloat(f.fixedPrice);
     const revenueOverride=(billable && fp>0) ? fp : undefined;
     const expAmt=parseFloat(f.expenseAmount);
@@ -1253,7 +1258,7 @@ class Component extends DCLogic {
     const HPD=this.HOURS_PER_DAY;
     const SD=this.STANDARD_DAY_HOURS;
     const leaveHours=aCur.leaveHours||0;
-    const leaveDays=leaveHours/HPD;
+    const leaveDays=(aCur.offHours||0)/HPD;
     const effWD=Math.max(cal0.workingDays-leaveDays,0);
     const effElapsed=Math.max((cur.isCurrent?cal0.elapsed:cal0.workingDays)-leaveDays,0);
     const capacityH=effWD*SD;
@@ -1270,7 +1275,7 @@ class Component extends DCLogic {
       monthSub:(cur.isCurrent?'Month to date \u00B7 ':'Full month \u00B7 ')+SD+'h working day',
       workingDays:this.fdays(effWD),
       elapsed:cur.isCurrent?this.fdays(effElapsed):null,
-      leaveDays: leaveHours>0 ? this.fdays(leaveDays) : null,
+      leaveDays: leaveHours>0 ? this.fdays(leaveHours/HPD) : null,
       bankHolidays:cal0.bankHolidays.length,
       capacityStr:this.fh(capacityH),
       loggedStr:this.fh(aCur.total),
@@ -1295,7 +1300,7 @@ class Component extends DCLogic {
     const getMonthObj=(def)=> monthByKey[def.key] || this.monthMetaFor(def.year, def.month);
 
     let fyTotal=0,fyBill=0,fyRev=0,fyWDTot=0,fyWDElapsed=0,fyLeave=0;
-    fyDefs.forEach(def=>{ const m=getMonthObj(def); const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.leaveHours||0; fyTotal+=a.total; fyBill+=a.billable; fyRev+=a.revenue; fyLeave+=lh; fyWDTot+=Math.max(c.workingDays-lh/HPD,0); if(def.key<=todayKey) fyWDElapsed+=Math.max(c.elapsed-lh/HPD,0); });
+    fyDefs.forEach(def=>{ const m=getMonthObj(def); const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.offHours||0; fyTotal+=a.total; fyBill+=a.billable; fyRev+=a.revenue; fyLeave+=(a.leaveHours||0); fyWDTot+=Math.max(c.workingDays-lh/HPD,0); if(def.key<=todayKey) fyWDElapsed+=Math.max(c.elapsed-lh/HPD,0); });
     const fyCapElapsed=fyWDElapsed*SD, fyCapTot=fyWDTot*SD;
     const fy={
       label:`${fyStartR}/${String((fyStartR+1)%100).padStart(2,'0')}`,
@@ -1319,17 +1324,17 @@ class Component extends DCLogic {
     if(scope==='fy'){ listMonths=fyDefs.map(getMonthObj).filter(m=> m.key<=todayKey || this.aggregate(m).total>0); }
     else { listMonths=this.state.months.filter(m=>this.aggregate(m).total>0).sort((a,b)=> a.key<b.key?-1:1); }
     const maxTot2=Math.max.apply(null, listMonths.map(m=>this.aggregate(m).total).concat([1]));
-    const reportRows=listMonths.map(m=>{ const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.leaveHours||0; const effWDr=Math.max(c.workingDays-lh/HPD,0); const capH=effWDr*SD; const ot=this.computeOvertime(m); return {label:m.label, labelColor:'#0e2b33', workDays:this.fdays(effWDr), total:a.total>0?this.fh(a.total)+'h':'\u2014', billable:a.billable>0?this.fh(a.billable)+'h':'\u2014', util:a.total>0?Math.round(a.util)+'%':'\u2014', capacity:this.fh(capH)+'h', capUsed:(capH>0&&a.total>0)?Math.round(a.total/capH*100)+'%':'\u2014', revenue:a.revenue>0?this.fm(a.revenue):'\u2014', overtime:ot.monthlyOT>0?this.fh(ot.monthlyOT)+'h':'\u2014', totalPct:(a.total/maxTot2*100).toFixed(1)}; });
+    const reportRows=listMonths.map(m=>{ const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.offHours||0; const effWDr=Math.max(c.workingDays-lh/HPD,0); const capH=effWDr*SD; const ot=this.computeOvertime(m); return {label:m.label, labelColor:'#0e2b33', workDays:this.fdays(effWDr), total:a.total>0?this.fh(a.total)+'h':'\u2014', billable:a.billable>0?this.fh(a.billable)+'h':'\u2014', util:a.total>0?Math.round(a.util)+'%':'\u2014', capacity:this.fh(capH)+'h', capUsed:(capH>0&&a.total>0)?Math.round(a.total/capH*100)+'%':'\u2014', revenue:a.revenue>0?this.fm(a.revenue):'\u2014', overtime:Math.abs(ot.monthlyOT)>0.001?this.fh(ot.monthlyOT)+'h':'\u2014', totalPct:(a.total/maxTot2*100).toFixed(1)}; });
     let tWD=0,tTot=0,tBill=0,tCap=0,tRev=0,tOT=0;
-    listMonths.forEach(m=>{ const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.leaveHours||0; const eff=Math.max(c.workingDays-lh/HPD,0); tWD+=eff; tTot+=a.total; tBill+=a.billable; tCap+=eff*SD; tRev+=a.revenue; tOT+=this.computeOvertime(m).monthlyOT; });
-    const reportTotals={ label: scope==='fy'?'FY to date':'All months', workDays:this.fdays(tWD), total:this.fh(tTot)+'h', billable:this.fh(tBill)+'h', util:tTot>0?Math.round(tBill/tTot*100)+'%':'\u2014', capacity:this.fh(tCap)+'h', capUsed:tCap>0?Math.round(tTot/tCap*100)+'%':'\u2014', revenue:this.fm(tRev), overtime:tOT>0?this.fh(tOT)+'h':'\u2014' };
+    listMonths.forEach(m=>{ const a=this.aggregate(m); const c=this.computeCal(m); const lh=a.offHours||0; const eff=Math.max(c.workingDays-lh/HPD,0); tWD+=eff; tTot+=a.total; tBill+=a.billable; tCap+=eff*SD; tRev+=a.revenue; tOT+=this.computeOvertime(m).monthlyOT; });
+    const reportTotals={ label: scope==='fy'?'FY to date':'All months', workDays:this.fdays(tWD), total:this.fh(tTot)+'h', billable:this.fh(tBill)+'h', util:tTot>0?Math.round(tBill/tTot*100)+'%':'\u2014', capacity:this.fh(tCap)+'h', capUsed:tCap>0?Math.round(tTot/tCap*100)+'%':'\u2014', revenue:this.fm(tRev), overtime:Math.abs(tOT)>0.001?this.fh(tOT)+'h':'\u2014' };
     const hasReportRows=listMonths.length>0;
 
     const matrixDefs = (scope==='fy') ? fyDefs.filter(d=>d.key<=todayKey) : listMonths.map(m=>({key:m.key, year:m.year, month:m.month}));
     const matrixMonths = matrixDefs.map(d=>({label:new Date(d.year,d.month-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'})}));
-    const matrixRows = this.state.work.filter(w=>w.category!=='Annual leave').map(w=>{ let tot=0, rev=0; const cells=matrixDefs.map(d=>{ const m=monthByKey[d.key]; let h=0; if(m){ m.entries.forEach(e=>{ if(e.client===w.name){ h+=e.hours; if(e.billable) rev+=(e.revenueOverride!=null?e.revenueOverride:(e.billHours!=null?e.billHours:e.hours)*(e.allied?e.rate*0.8:e.rate)); } }); } tot+=h; return {hStr:h>0?this.fh(h)+'h':'\u2014'}; }); return {name:w.name, color:CC[w.category], cells, totalStr:this.fh(tot)+'h', revStr:rev>0?this.fm(rev):'\u2014', has:tot>0}; }).filter(r=>r.has);
-    const matrixColTotals=matrixDefs.map(d=>{ const m=monthByKey[d.key]; let h=0; if(m) m.entries.forEach(e=>{ if(e.category!=='Annual leave') h+=e.hours; }); return {hStr:h>0?this.fh(h)+'h':'\u2014'}; });
-    let matrixGrand=0, matrixRev=0; matrixDefs.forEach(d=>{ const m=monthByKey[d.key]; if(m) m.entries.forEach(e=>{ if(e.category!=='Annual leave'){ matrixGrand+=e.hours; if(e.billable) matrixRev+=(e.revenueOverride!=null?e.revenueOverride:(e.billHours!=null?e.billHours:e.hours)*(e.allied?e.rate*0.8:e.rate)); } }); });
+    const matrixRows = this.state.work.filter(w=>(w.category!=='Annual leave'&&w.category!=='Time off in lieu')).map(w=>{ let tot=0, rev=0; const cells=matrixDefs.map(d=>{ const m=monthByKey[d.key]; let h=0; if(m){ m.entries.forEach(e=>{ if(e.client===w.name){ h+=e.hours; if(e.billable) rev+=(e.revenueOverride!=null?e.revenueOverride:(e.billHours!=null?e.billHours:e.hours)*(e.allied?e.rate*0.8:e.rate)); } }); } tot+=h; return {hStr:h>0?this.fh(h)+'h':'\u2014'}; }); return {name:w.name, color:CC[w.category], cells, totalStr:this.fh(tot)+'h', revStr:rev>0?this.fm(rev):'\u2014', has:tot>0}; }).filter(r=>r.has);
+    const matrixColTotals=matrixDefs.map(d=>{ const m=monthByKey[d.key]; let h=0; if(m) m.entries.forEach(e=>{ if((e.category!=='Annual leave'&&e.category!=='Time off in lieu')) h+=e.hours; }); return {hStr:h>0?this.fh(h)+'h':'\u2014'}; });
+    let matrixGrand=0, matrixRev=0; matrixDefs.forEach(d=>{ const m=monthByKey[d.key]; if(m) m.entries.forEach(e=>{ if((e.category!=='Annual leave'&&e.category!=='Time off in lieu')){ matrixGrand+=e.hours; if(e.billable) matrixRev+=(e.revenueOverride!=null?e.revenueOverride:(e.billHours!=null?e.billHours:e.hours)*(e.allied?e.rate*0.8:e.rate)); } }); });
     const matrixTotals={cells:matrixColTotals, totalStr:this.fh(matrixGrand)+'h', revStr:matrixRev>0?this.fm(matrixRev):'\u2014'};
     const hasMatrix = matrixRows.length>0 && matrixMonths.length>0;
     const reportTitle = scope==='fy' ? ('Financial year '+fy.label+' \u2014 monthly breakdown') : 'All recorded months';
@@ -1370,7 +1375,7 @@ class Component extends DCLogic {
       f_expenseAmount:f.expenseAmount||'', f_expenseDesc:f.expenseDesc||'', f_expenseRebill:!!f.expenseRebill,
       setExpenseAmount:(e)=>this.setForm({expenseAmount:e.target.value}), setExpenseDesc:(e)=>this.setForm({expenseDesc:e.target.value}), setExpenseRebill:(e)=>this.setForm({expenseRebill:e.target.checked}),
       clientOptions, taskOptions, catOptions:this.CATS,
-      showTaskField: (f.category!=='General' && f.category!=='Annual leave'), clientLabel: f.category==='Annual leave'?'Type':(f.category==='General'?'Activity':'Client / work'),
+      showTaskField: (f.category!=='General' && f.category!=='Annual leave' && f.category!=='Time off in lieu'), clientLabel: (f.category==='Annual leave'||f.category==='Time off in lieu')?'Type':(f.category==='General'?'Activity':'Client / work'),
       showDivisionField: f.category==='Client Work', divisionOptions:this.DIVISIONS, f_division:f.division||'',
       setDivision:(e)=>this.setForm({division:e.target.value}),
       setCat:(e)=>this.setForm({category:e.target.value}), setClient:(e)=>this.setForm({client:e.target.value}), setTask:(e)=>this.setForm({task:e.target.value}), setHours:(e)=>this.setForm({hours:e.target.value}), setDays:(e)=>this.setForm({days:e.target.value}), setNote:(e)=>this.setForm({note:e.target.value}), setDate:(e)=>this.setForm({date:e.target.value}), setFixedPrice:(e)=>this.setForm({fixedPrice:e.target.value}),
@@ -1378,8 +1383,8 @@ class Component extends DCLogic {
       setModeHours:()=>this.setForm({entryMode:'hours'}), setModeDay:()=>this.setForm({entryMode:'day'}),
       modeHoursBg: f.entryMode!=='day'?'#fff':'transparent', modeHoursColor: f.entryMode!=='day'?'#0e2b33':'#5b7178',
       modeDayBg: f.entryMode==='day'?'#fff':'transparent', modeDayColor: f.entryMode==='day'?'#0e2b33':'#5b7178',
-      dayModeHint: (()=>{ const dv=parseFloat(f.days); const days=dv>0?dv:0; if(f.category==='Annual leave') return this.fh(days*this.HOURS_PER_DAY)+'h leave'; return this.fh(days*this.STANDARD_DAY_HOURS)+'h worked \u00B7 '+this.fh(days*this.HOURS_PER_DAY)+'h billed'; })(),
-      toggleBillable:()=>{ if(this.state.form.category==='Project Work'||this.state.form.category==='Annual leave') return; this.setForm({billable:!this.state.form.billable}); },
+      dayModeHint: (()=>{ const dv=parseFloat(f.days); const days=dv>0?dv:0; if(f.category==='Annual leave') return this.fh(days*this.HOURS_PER_DAY)+'h leave'; if(f.category==='Time off in lieu') return this.fh(days*this.STANDARD_DAY_HOURS)+'h taken off overtime'; return this.fh(days*this.STANDARD_DAY_HOURS)+'h worked \u00B7 '+this.fh(days*this.HOURS_PER_DAY)+'h billed'; })(),
+      toggleBillable:()=>{ if(this.state.form.category==='Project Work'||(this.state.form.category==='Annual leave'||this.state.form.category==='Time off in lieu')) return; this.setForm({billable:!this.state.form.billable}); },
       addEntry:()=>this.addEntry(),
       formTitle:this.state.editingId!=null?'Edit time entry':'New time entry',
       addBtnLabel:this.state.editingId!=null?'Save changes':'Add entry',
@@ -1396,9 +1401,9 @@ class Component extends DCLogic {
       importData:(e)=>{ const f=e.target.files&&e.target.files[0]; this.importData(f); e.target.value=''; },
       backupMsg:this.state.backupMsg||null,
       cloudStatus:this.state.cloudStatus||null,
-      billableSwitchBg:(f.billable && !projectLock && f.category!=='Annual leave')?'#49bd99':'#cdd9db',
-      billableKnobX:(f.billable && !projectLock && f.category!=='Annual leave')?'22px':'2px',
-      billableLabel: f.category==='Annual leave' ? 'Annual leave (non-billable)' : (projectLock?'Non-billable (internal project)':(f.billable?'Billable':'Non-billable')),
+      billableSwitchBg:(f.billable && !projectLock && f.category!=='Annual leave' && f.category!=='Time off in lieu')?'#49bd99':'#cdd9db',
+      billableKnobX:(f.billable && !projectLock && f.category!=='Annual leave' && f.category!=='Time off in lieu')?'22px':'2px',
+      billableLabel: f.category==='Time off in lieu' ? 'Time off in lieu (non-billable, deducted from overtime)' : f.category==='Annual leave' ? 'Annual leave (non-billable)' : (projectLock?'Non-billable (internal project)':(f.billable?'Billable':'Non-billable')),
       f_allied:!!f.allied,
       toggleAllied:()=>this.setForm({allied:!this.state.form.allied}),
       alliedBg:f.allied?'#49bd99':'#fff',

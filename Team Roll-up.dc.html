@@ -441,7 +441,7 @@ class Component extends DCLogic {
     this.SUPABASE_URL = 'https://jesjtdkehyzteoqhycyq.supabase.co';
     this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Implc2p0ZGtlaHl6dGVvcWh5Y3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMDAyMTcsImV4cCI6MjA5OTU3NjIxN30.SE_bWxKBHaQujC-7IuthAkVu1HeVw5sHX1SLkgnNxBk';
     this.PALETTE = ['#003a4a','#49bd99','#1c8baf','#f05376','#ffce6d','#5b4fc4','#1b9e77','#d95f02'];
-    this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3'};
+    this.CATCOLOR = {'Client Work':'#49bd99','Digital Support':'#1c8baf','Project Work':'#ffce6d','General':'#f05376','Annual leave':'#7c93a3','Time off in lieu':'#a58fb8'};
     this.BH = new Set([
       '2025-01-01','2025-04-18','2025-04-21','2025-05-05','2025-05-26','2025-08-25','2025-12-25','2025-12-26',
       '2026-01-01','2026-04-03','2026-04-06','2026-05-04','2026-05-25','2026-08-31','2026-12-25','2026-12-28',
@@ -493,11 +493,12 @@ class Component extends DCLogic {
         weeks[wk].workDays++;
       }
     }
-    let workedTotal=0, leaveTotal=0;
+    let workedTotal=0, leaveTotal=0, toilTotal=0;
     (m.entries||[]).forEach(e=>{
       const wk=this.weekKeyFor(e.date);
       if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0};
       if(e.category==='Annual leave'){ weeks[wk].leave+=e.hours; leaveTotal+=e.hours; return; }
+      if(e.category==='Time off in lieu'){ const eq=e.hours*HPD/SD; weeks[wk].leave+=eq; leaveTotal+=eq; toilTotal+=e.hours; return; }
       weeks[wk].worked+=e.hours;
       workedTotal+=e.hours;
     });
@@ -510,8 +511,8 @@ class Component extends DCLogic {
     const cal=this.computeCalFor(m);
     const leaveDaysTotal=leaveTotal/HPD;
     const monthlyCap=Math.max((cal.workingDays-leaveDaysTotal)*SD, 0);
-    const monthlyOT=Math.max(workedTotal-monthlyCap, 0);
-    return {weeklyOT, monthlyOT};
+    const monthlyOT=Math.max(workedTotal-monthlyCap, 0)-toilTotal;
+    return {weeklyOT, monthlyOT, toil:toilTotal};
   }
 
   overtimeDaysFor(person, keys, SD, HPD){
@@ -534,6 +535,7 @@ class Component extends DCLogic {
         const wk=this.weekKeyFor(e.date);
         if(!weeks[wk]) weeks[wk]={workDays:0, worked:0, leave:0, days:{}};
         if(e.category==='Annual leave'){ weeks[wk].leave+=e.hours; return; }
+        if(e.category==='Time off in lieu'){ weeks[wk].leave+=e.hours*HPD/SD; return; }
         weeks[wk].worked+=e.hours;
         if(!weeks[wk].days[e.date]) weeks[wk].days[e.date]={total:0, items:[]};
         weeks[wk].days[e.date].total+=e.hours;
@@ -770,7 +772,7 @@ class Component extends DCLogic {
   }
 
   aggPerson(person, keys){
-    let total=0,bill=0,rev=0,leave=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={}; const expenses=[]; const entries=[];
+    let total=0,bill=0,rev=0,leave=0,toil=0,ot=0; const byClient={}; const byDivision={}; const byClientDiv={}; const byTask={}; const expenses=[]; const entries=[];
     this.DIVISIONS.forEach(dv=>{ byDivision[dv]={hours:0,rev:0}; });
     const otm=person.overtimeByMonth||{};
     keys.forEach(k=>{ if(otm[k]) ot+=otm[k].monthlyOT||0; });
@@ -778,6 +780,7 @@ class Component extends DCLogic {
       if(keys.indexOf(m.key)<0) return;
       (m.entries||[]).forEach(e=>{
         if(e.category==='Annual leave'){ leave+=e.hours; return; }
+        if(e.category==='Time off in lieu'){ toil+=e.hours; return; }
         total+=e.hours;
         const cn=this.canonicalClient(e.client);
         if(!byClient[cn]) byClient[cn]={hours:0,rev:0,category:e.category};
@@ -796,7 +799,7 @@ class Component extends DCLogic {
         entries.push({date:e.date, client:cn, division:e.division||'', category:e.category, task:e.task||'', hours:e.hours, billable:e.billable, revenue:r, note:e.note||''});
       });
     });
-    return {total,bill,rev,leave,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask,expenses,entries};
+    return {total,bill,rev,leave,toil,ot,nonbill:total-bill,byClient,byDivision,byClientDiv,byTask,expenses,entries};
   }
 
   deriveName(fileName){
@@ -866,7 +869,7 @@ class Component extends DCLogic {
       personAggs.push({p,a});
       (a.expenses||[]).forEach(x=>{ allExpenses.push({...x, person:p.name, personColor:p.color}); });
       (a.entries||[]).forEach(x=>{ allEntries.push({...x, person:p.name}); });
-      const leaveDays=a.leave/this.HPD;
+      const leaveDays=a.leave/this.HPD + (a.toil||0)/(p.standardDayHours||9);
       const effWD=Math.max(rawWD-leaveDays,0);
       const sd=p.standardDayHours||9;
       const capH=effWD*sd;
@@ -888,9 +891,9 @@ class Component extends DCLogic {
         billable:a.bill>0?this.fh(a.bill)+'h':'\u2014',
         util:a.total>0?Math.round(a.bill/a.total*100)+'%':'\u2014',
         capUsed:capH>0&&a.total>0?Math.round(a.total/capH*100)+'%':'\u2014',
-        leave:a.leave>0?this.fdays(leaveDays)+'d':'\u2014',
+        leave:a.leave>0?this.fdays(a.leave/this.HPD)+'d':'\u2014',
         revenue:a.rev>0?this.fm(a.rev):'\u2014',
-        overtime:a.ot>0?this.fh(a.ot)+'h':'\u2014',
+        overtime:Math.abs(a.ot)>0.001?this.fh(a.ot)+'h':'\u2014',
       };
     });
 
@@ -903,7 +906,7 @@ class Component extends DCLogic {
       capUsed:T.capH>0?Math.round(T.total/T.capH*100)+'%':'\u2014',
       leave:T.leave>0?this.fdays(T.leave/this.HPD)+'d':'\u2014',
       revenue:this.fm(T.rev),
-      overtime:T.ot>0?this.fh(T.ot)+'h':'\u2014',
+      overtime:Math.abs(T.ot)>0.001?this.fh(T.ot)+'h':'\u2014',
     };
 
     const tiles=[
