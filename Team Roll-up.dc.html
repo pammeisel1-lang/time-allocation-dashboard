@@ -755,10 +755,17 @@ class Component extends DCLogic {
       'Swift Fire and Safety Ltd': 'Swift Fire & Safety',
       'Swift Fire & Safety Ltd': 'Swift Fire & Safety',
       'Swift Fire': 'Swift Fire & Safety',
+      'Robinsons Autologistics': 'Robinsons Auto Logistics',
+      'Robinsons AutoLogistics': 'Robinsons Auto Logistics',
+      'Robinson Auto Logistics': 'Robinsons Auto Logistics',
+      'Ballards': 'Ballards Removals',
     };
     if(ALIASES[name]) return ALIASES[name];
     const n=String(name||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/\band\b/g,'&').replace(/\s*&\s*/g,'&').replace(/\bltd\b\.?/g,'').trim();
-    if(n==='swift fire&safety'||n==='swift fire&safety') return 'Swift Fire & Safety';
+    if(n==='swift fire&safety') return 'Swift Fire & Safety';
+    const nc=n.replace(/[^a-z&]/g,'');
+    if(nc==='robinsonsautologistics'||nc==='robinsonautologistics') return 'Robinsons Auto Logistics';
+    if(nc==='ballards'||nc==='ballardsremovals') return 'Ballards Removals';
     return name;
   }
 
