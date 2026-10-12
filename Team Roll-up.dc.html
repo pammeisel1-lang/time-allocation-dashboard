@@ -869,7 +869,7 @@ class Component extends DCLogic {
       personAggs.push({p,a});
       (a.expenses||[]).forEach(x=>{ allExpenses.push({...x, person:p.name, personColor:p.color}); });
       (a.entries||[]).forEach(x=>{ allEntries.push({...x, person:p.name}); });
-      const leaveDays=a.leave/this.HPD + (a.toil||0)/(p.standardDayHours||9);
+      const leaveDays=a.leave/this.HPD;
       const effWD=Math.max(rawWD-leaveDays,0);
       const sd=p.standardDayHours||9;
       const capH=effWD*sd;

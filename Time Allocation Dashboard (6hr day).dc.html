@@ -881,7 +881,7 @@ class Component extends DCLogic {
       perDay[e.day].total+=e.hours;
       if(e.billable){ const eff=e.allied?e.rate*0.8:e.rate; const rev=(e.revenueOverride!=null?e.revenueOverride:bh*eff); billable+=bh; revenue+=rev; byClient[e.client].billable+=bh; byClient[e.client].revenue+=rev; perDay[e.day].billable+=bh; }
     });
-    return {total, billable, nonBillable:total-billable, revenue, leaveHours, toilHours, offHours:leaveHours+toilHours*this.HOURS_PER_DAY/this.STANDARD_DAY_HOURS, util: total>0?billable/total*100:0, byClient, byTask, byCat, perDay};
+    return {total, billable, nonBillable:total-billable, revenue, leaveHours, toilHours, offHours:leaveHours, util: total>0?billable/total*100:0, byClient, byTask, byCat, perDay};
   }
 
   buildTrend(m,agg){
