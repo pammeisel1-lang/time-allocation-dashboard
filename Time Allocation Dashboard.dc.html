@@ -754,7 +754,9 @@ class Component extends DCLogic {
     const curKey=`${ty}-${String(tm).padStart(2,'0')}`;
     const todayIso=`${curKey}-${String(td).padStart(2,'0')}`;
     let months, work;
-    const saved = this.load();
+    let profile0=null; try{ profile0=JSON.parse(localStorage.getItem(this.PROFILE_LSKEY)||'null'); }catch(e){}
+    let saved = this.load();
+    if(saved && saved.owner && (!profile0 || !profile0.name || saved.owner!==this.slugFor(profile0.name))) saved=null;
     if(saved){ months=saved.months; work=saved.work.slice(); this.idc.v=saved.idc||1; this.WORK.forEach(d=>{ if(!work.some(w=>w.name===d.name)) work.push({...d}); }); }
     else { months=this.buildFYMonths(this.fyStartFor(ty, tm)); work=this.WORK.slice(); }
     if(!months.find(m=>m.key===curKey)){ months=this.ensureMonth(months, ty, tm).months; }
@@ -770,16 +772,27 @@ class Component extends DCLogic {
       newClientName:'',
       newClientCat:'Client Work',
       form:{ category:'Client Work', client:'Pro-Mile', task:'Advisory call', hours:'', entryMode:'hours', days:'1', billable:true, date:todayIso, note:'', allied:false, fixedPrice:'', division:'', expenseAmount:'', expenseDesc:'', expenseRebill:false },
-      editingProfile:false,
-      profileName:(profile && profile.name) || (this.props && this.props.userName) || '',
-      profileRole:(profile && profile.role) || (this.props && this.props.userRole) || '',
+      editingProfile:!(profile && profile.name),
+      profileName:(profile && profile.name) || '',
+      profileRole:(profile && profile.role) || '',
     };
   }
 
   saveProfile(name, role){
-    this.setState({profileName:name, profileRole:role, editingProfile:false});
+    const prevSlug=this.state.profileName?this.slugFor(this.state.profileName):null;
+    const switching=prevSlug!==this.slugFor(name);
     try{ localStorage.setItem(this.PROFILE_LSKEY, JSON.stringify({name, role})); }catch(e){}
-    this.queueCloudPush();
+    if(!switching){ this.setState({profileName:name, profileRole:role, editingProfile:false}); this.queueCloudPush(); return; }
+    // Different person: never push the previous person's data under the new name.
+    clearTimeout(this._cloudTimer);
+    const now=new Date();
+    let months=this.buildFYMonths(this.fyStartFor(now.getFullYear(), now.getMonth()+1));
+    months=this.ensureMonth(months, now.getFullYear(), now.getMonth()+1).months;
+    this.idc.v=1;
+    this.setState({profileName:name, profileRole:role, editingProfile:false, months, work:this.WORK.slice()}, ()=>{
+      try{ localStorage.removeItem(this.LSKEY); }catch(e){}
+      this.pullCloud(true);
+    });
   }
 
   slugFor(name){ return (name||'unknown').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'unknown'; }
@@ -792,7 +805,8 @@ class Component extends DCLogic {
     return {'apikey':this.SUPABASE_ANON_KEY, 'Authorization':'Bearer '+this.SUPABASE_ANON_KEY, 'Content-Type':'application/json'};
   }
 
-  pullCloud(){
+  pullCloud(force){
+    if(!this.state.profileName) return;
     const slug=this.slugFor(this.state.profileName);
     const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state?person_slug=eq.${encodeURIComponent(slug)}&dashboard_type=eq.${this.DASHBOARD_TYPE}&select=data,updated_at`;
     fetch(url,{headers:{...this.cloudHeaders(),'Accept':'application/json'}})
@@ -803,7 +817,7 @@ class Component extends DCLogic {
         const localRaw=localStorage.getItem(this.LSKEY);
         const localSavedAt=localRaw?(JSON.parse(localRaw).savedAt||0):0;
         const cloudSavedAt=new Date(row.updated_at).getTime();
-        if(cloudSavedAt>localSavedAt && row.data && Array.isArray(row.data.months)){
+        if((force || cloudSavedAt>localSavedAt) && row.data && Array.isArray(row.data.months)){
           if(row.data.idc) this.idc.v=Math.max(this.idc.v, row.data.idc);
           this.save(row.data.months, row.data.work, cloudSavedAt);
           this.setState({months:row.data.months, work:(()=>{ const w=(row.data.work||this.state.work).slice(); this.WORK.forEach(d=>{ if(!w.some(x=>x.name===d.name)) w.push({...d}); }); return w; })(), cloudStatus:'synced from cloud \u2713'});
@@ -822,6 +836,7 @@ class Component extends DCLogic {
   }
 
   pushCloud(){
+    if(!this.state.profileName) return;
     const slug=this.slugFor(this.state.profileName);
     const url=`${this.SUPABASE_URL}/rest/v1/dashboard_state`;
     const body=[{person_slug:slug, dashboard_type:this.DASHBOARD_TYPE, data:{months:this.state.months, work:this.state.work, idc:this.idc.v}, updated_at:new Date().toISOString()}];
@@ -979,7 +994,7 @@ class Component extends DCLogic {
   }
 
   load(){
-    try{ const raw=localStorage.getItem(this.LSKEY); if(!raw) return null; const o=JSON.parse(raw); if(!o || o.v!==2 || !Array.isArray(o.months)) return null; return {months:o.months, work:Array.isArray(o.work)?o.work:this.WORK.slice(), idc:o.idc}; }catch(e){ return null; }
+    try{ const raw=localStorage.getItem(this.LSKEY); if(!raw) return null; const o=JSON.parse(raw); if(!o || o.v!==2 || !Array.isArray(o.months)) return null; return {owner:o.owner, months:o.months, work:Array.isArray(o.work)?o.work:this.WORK.slice(), idc:o.idc}; }catch(e){ return null; }
   }
 
   exportData(){
@@ -1022,7 +1037,7 @@ class Component extends DCLogic {
   }
 
   save(months, work, savedAt){
-    try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:2, idc:this.idc.v, months:months||this.state.months, work:work||this.state.work, savedAt:savedAt||Date.now()})); }catch(e){}
+    try{ localStorage.setItem(this.LSKEY, JSON.stringify({v:2, owner:this.slugFor(this.state.profileName), idc:this.idc.v, months:months||this.state.months, work:work||this.state.work, savedAt:savedAt||Date.now()})); }catch(e){}
     if(!savedAt) this.queueCloudPush();
   }
 
