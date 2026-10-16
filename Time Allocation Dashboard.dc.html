@@ -815,10 +815,14 @@ class Component extends DCLogic {
         if(!rows || !rows.length) { this.queueCloudPush(); this.setState({cloudStatus:'synced \u2713'}); setTimeout(()=>{ if(this.state.cloudStatus) this.setState({cloudStatus:null}); },4000); return; }
         const row=rows[0];
         const localRaw=localStorage.getItem(this.LSKEY);
-        const localSavedAt=localRaw?(JSON.parse(localRaw).savedAt||0):0;
+        const localObj=localRaw?JSON.parse(localRaw):null;
+        const localSavedAt=localObj?(localObj.savedAt||0):0;
+        // Local data from before owner-tagging can't be trusted to belong to this person — prefer the cloud copy.
+        if(localObj && !localObj.owner) force=true;
         const cloudSavedAt=new Date(row.updated_at).getTime();
         if((force || cloudSavedAt>localSavedAt) && row.data && Array.isArray(row.data.months)){
           if(row.data.idc) this.idc.v=Math.max(this.idc.v, row.data.idc);
+          if(!row.data.months.length){ const n=new Date(); let fm=this.buildFYMonths(this.fyStartFor(n.getFullYear(), n.getMonth()+1)); row.data.months=this.ensureMonth(fm, n.getFullYear(), n.getMonth()+1).months; }
           this.save(row.data.months, row.data.work, cloudSavedAt);
           this.setState({months:row.data.months, work:(()=>{ const w=(row.data.work||this.state.work).slice(); this.WORK.forEach(d=>{ if(!w.some(x=>x.name===d.name)) w.push({...d}); }); return w; })(), cloudStatus:'synced from cloud \u2713'});
         } else {
